@@ -8,6 +8,7 @@
 @inject HestiaLinkContext DbContext
 @inject IJSRuntime JSRuntime
 @inject UserSession UserSession
+@inject InventoryService InventoryService
 @layout MainLayout
 
 <!-- Keep all your existing HTML code exactly as it is -->
@@ -15,8 +16,11 @@
 
 <div class="page-wrapper">
     <header class="page-topbar">
-        <h1>Check In / Check Out</h1>
-        <span class="page-topbar-subtitle">Manage room occupancy</span>
+        <div>
+            <h1>Check In / Check Out</h1>
+            <span class="page-topbar-subtitle">Manage room occupancy</span>
+        </div>
+        <UserDropdown />
     </header>
 
     <section class="page-content">
@@ -186,12 +190,18 @@
                                 </button>
                                 @if (ShowServicesDropdown)
                                 {
-                                    <div class="dropdown-panel" style="width:100%;">
+                                    <div class="dropdown-panel" style="width:100%; max-height:300px; overflow-y:auto;">
                                         @if (AvailableServices.Any())
                                         {
-                                            @foreach (var svc in AvailableServices)
+                                            @foreach (var categoryGroup in AvailableServices.GroupBy(s => s.ServiceCategory?.ServiceCategoryName ?? "Other").OrderBy(g => g.Key))
                                             {
-                                                <label class="dropdown-item"><input type="checkbox" checked="@SelectedServiceIds.Contains(svc.ServiceId)" @onchange="(e) => ToggleServiceSelection(svc.ServiceId, (bool?)e.Value == true)" /> @svc.ServiceName</label>
+                                                <div style="padding:8px 12px; background:#f8fafc; font-weight:700; font-size:0.85rem; color:#0f766e; border-bottom:1px solid #e5e7eb;">
+                                                    @categoryGroup.Key
+                                                </div>
+                                                @foreach (var svc in categoryGroup)
+                                                {
+                                                    <label class="dropdown-item"><input type="checkbox" checked="@SelectedServiceIds.Contains(svc.ServiceId)" @onchange="(e) => ToggleServiceSelection(svc.ServiceId, (bool?)e.Value == true)" /> @svc.ServiceName <span style="margin-left:auto; color:#64748b; font-size:0.85rem;">₱@svc.StandardPrice.ToString("N2")</span></label>
+                                                }
                                             }
                                         }
                                         else
@@ -288,9 +298,9 @@
                     </div>
                 </div>
 
-                <div style="display:flex; gap:10px; margin-top:25px; padding:0 20px 20px 20px;">
-                    <button class="btn-checkout" @onclick="ProcessCheckOut">Confirm Check Out</button>
-                    <button class="btn-cancel" @onclick="CloseCheckOutModal">Cancel</button>
+                <div class="action-footer" style="border:none; padding:16px; display:flex; gap:12px; justify-content:flex-end; border-top:1px solid #e5e7eb;">
+                    <button class="btn-secondary" @onclick="CloseCheckOutModal">Cancel</button>
+                    <button class="btn-primary" @onclick="ProcessCheckOut">Confirm Check Out</button>
                 </div>
             }
 
@@ -310,12 +320,18 @@
                 <div style="font-size:0.9rem; color:#f8fafc;">@(SelectedRoom != null ? $"Room {SelectedRoom.RoomNumber}" : "")</div>
             </div>
 
-            <div style="padding:12px;">
+            <div style="padding:12px; max-height:400px; overflow-y:auto;">
                 @if (AvailableServices.Any())
                 {
-                    @foreach (var svc in AvailableServices)
+                    @foreach (var categoryGroup in AvailableServices.GroupBy(s => s.ServiceCategory?.ServiceCategoryName ?? "Other").OrderBy(g => g.Key))
                     {
-                        <label style="display:flex; align-items:center; gap:8px; padding:8px 0;"><input type="checkbox" checked="@AddServiceSelection.Contains(svc.ServiceId)" @onchange="(e) => ToggleAddServiceSelection(svc.ServiceId, (bool?)e.Value == true)" /> @svc.ServiceName <span style="margin-left:auto; color:#64748b;">@svc.StandardPrice.ToString("C")</span></label>
+                        <div style="padding:8px 12px; background:#f0fdfa; font-weight:700; font-size:0.9rem; color:#0f766e; border-bottom:2px solid #0f766e; margin-top:12px; margin-bottom:8px;">
+                            @categoryGroup.Key
+                        </div>
+                        @foreach (var svc in categoryGroup)
+                        {
+                            <label style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #f1f5f9;"><input type="checkbox" checked="@AddServiceSelection.Contains(svc.ServiceId)" @onchange="(e) => ToggleAddServiceSelection(svc.ServiceId, (bool?)e.Value == true)" /> @svc.ServiceName <span style="margin-left:auto; color:#64748b; font-weight:600;">₱@svc.StandardPrice.ToString("N2")</span></label>
+                        }
                     }
                 }
                 else
@@ -365,7 +381,12 @@
 
         try
         {
-            AvailableServices = await DbContext.Services.Where(s => s.Status == "Active").ToListAsync();
+            AvailableServices = await DbContext.Services
+                .Include(s => s.ServiceCategory)
+                .Where(s => s.Status == "Active" && s.IsActive == true)
+                .OrderBy(s => s.ServiceCategory != null ? s.ServiceCategory.ServiceCategoryName : "ZZZ")
+                .ThenBy(s => s.ServiceName)
+                .ToListAsync();
         }
         catch
         {
@@ -766,23 +787,37 @@
     private DateOnly GuestCheckIn = DateOnly.FromDateTime(DateTime.Today);
     private DateOnly GuestCheckOut = DateOnly.FromDateTime(DateTime.Today).AddDays(1);
 
-    // Helper method to get current user ID from UserSession
+    // Helper method to get current user ID for Payment.ProcessedBy
+    // Returns UserID from UserSession
     private int GetCurrentUserId()
     {
         try
         {
-            return UserSession?.UserID ?? 1;
-        }
-        catch
-        {
+            // Return UserID from UserSession (set during login)
+            if (UserSession != null && UserSession.UserID > 0)
+            {
+                return UserSession.UserID;
+            }
+            
+            // Fallback to 1 if no UserID is set
+            Console.WriteLine($"Warning: No UserID in UserSession, using fallback UserID 1");
             return 1;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in GetCurrentUserId: {ex.Message}");
+            return 1; // Last resort
         }
     }
 
     // Helper method to generate reference number
     private string GenerateReferenceNumber()
     {
-        return $"REF-{DateOnly.FromDateTime(DateTime.Now):yyyyMMddHHmmss}-{new Random().Next(1000, 9999)}";
+        var now = DateTime.Now;
+        var datePart = DateOnly.FromDateTime(now);
+        var timePart = TimeOnly.FromDateTime(now);
+
+        return $"REF-{datePart:yyyyMMdd}{timePart:HHmmss}-{new Random().Next(1000, 9999)}";
     }
 
     private async Task SaveGuest()
@@ -969,6 +1004,19 @@
                             ServiceStatus = "Pending"
                         };
                         DbContext.ServiceTransactions.Add(serviceTransaction);
+                        await DbContext.SaveChangesAsync(); // Save to get the ID
+
+                        // Automatically consume inventory if service has inventory links
+                        // Check if service has any inventory links (even if UsesInventory flag is not set)
+                        var hasLinks = await DbContext.ServiceInventories
+                            .AnyAsync(si => si.ServiceId == svc.ServiceId);
+                        
+                        if (hasLinks || svc.UsesInventory == true)
+                        {
+                            await InventoryService.ConsumeInventoryForServiceAsync(
+                                serviceTransaction.ServiceTransactionId, 
+                                roomForUpdate.RoomNumber);
+                        }
                     }
 
                     var bill = new Bill
@@ -1332,8 +1380,20 @@
                     ServiceStatus = "Pending"
                 };
                 DbContext.ServiceTransactions.Add(serviceTransaction);
+                await DbContext.SaveChangesAsync(); // Save to get the ID
+
+                // Automatically consume inventory if service has inventory links
+                // Check if service has any inventory links (even if UsesInventory flag is not set)
+                var hasLinks = await DbContext.ServiceInventories
+                    .AnyAsync(si => si.ServiceId == svc.ServiceId);
+                
+                if (hasLinks || svc.UsesInventory == true)
+                {
+                    await InventoryService.ConsumeInventoryForServiceAsync(
+                        serviceTransaction.ServiceTransactionId, 
+                        SelectedRoom?.RoomNumber);
+                }
             }
-            await DbContext.SaveChangesAsync();
 
             var addedAmount = AvailableServices.Where(s => AddServiceSelection.Contains(s.ServiceId)).Sum(s => s.StandardPrice);
             SelectedRoom.ServiceCharge += addedAmount;

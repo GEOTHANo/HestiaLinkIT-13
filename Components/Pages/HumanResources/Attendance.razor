@@ -9,8 +9,11 @@
 
 <div class="page-wrapper">
     <header class="page-topbar">
-        <h1>Attendance Management</h1>
-        <span class="page-topbar-subtitle">@SelectedDate.ToString("dddd, MMMM dd, yyyy")</span>
+        <div>
+            <h1>Attendance Management</h1>
+            <span class="page-topbar-subtitle">@SelectedDate.ToString("dddd, MMMM dd, yyyy")</span>
+        </div>
+        <UserDropdown />
     </header>
 
     <div class="page-content">

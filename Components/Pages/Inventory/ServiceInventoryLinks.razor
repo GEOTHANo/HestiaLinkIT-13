@@ -11,12 +11,12 @@
             <h1>Service Inventory Links</h1>
             <div class="page-topbar-subtitle">Link Services to Inventory Items</div>
         </div>
-        <div class="page-topbar-date">@DateTime.Now.ToString("MMMM dd, yyyy")</div>
+        <UserDropdown />
     </div>
 
     <div class="page-content">
         @* ===== SUMMARY CARDS ===== *@
-    @if (IsLoaded && !HasError)
+    @if (IsLoaded)
     {
         <div class="summary-cards">
             <div class="summary-card">
@@ -33,8 +33,8 @@
 
             <div class="summary-card">
                 <div class="summary-label">AVAILABLE SERVICES</div>
-                <div class="summary-value">@AllServices.Count(s => s.IsActive != null && s.IsActive.Value)</div>
-                <div class="summary-desc">Active service catalog</div>
+                <div class="summary-value">@AllServices.Count</div>
+                <div class="summary-desc">Service catalog</div>
             </div>
 
             <div class="summary-card">
@@ -64,102 +64,106 @@
     {
         <div class="loading">Loading service inventory links...</div>
     }
-    else if (HasError)
-    {
-        <div class="error-message">
-            <h4>⚠️ Database Error</h4>
-            <p>@ErrorMessage</p>
-            <button class="btn-primary" @onclick="RetryLoad">Retry</button>
-        </div>
-    }
     else
     {
-        <div class="links-grid">
+        <div class="links-container">
             @if (FilteredServices.Any())
             {
-                @foreach (var service in FilteredServices)
+                @foreach (var categoryGroup in FilteredServices.GroupBy(s => s.ServiceCategory?.ServiceCategoryName ?? "Uncategorized").OrderBy(g => g.Key))
                 {
-                    var links = ServiceLinksList.Where(l => l.ServiceId == service.ServiceId).ToList();
-                    <div class="service-card @(links.Any() ? "has-links" : "no-links")">
-                        <div class="service-header">
-                            <div class="service-info">
-                                <h3>@service.ServiceName</h3>
-                                <span class="service-category">@(service.ServiceCategory?.ServiceCategoryName ?? "Uncategorized")</span>
-                            </div>
-                            <div class="service-meta">
-                                <span class="service-price">₱@service.StandardPrice.ToString("N2")</span>
-                                @if (service.UsesInventory == true)
-                                {
-                                    <span class="uses-inventory-badge">Uses Inventory</span>
-                                }
-                            </div>
+                    <div class="category-section">
+                        <div class="category-header">
+                            <h2 class="category-title">@categoryGroup.Key</h2>
+                            <span class="category-count">@categoryGroup.Count() service(s)</span>
                         </div>
-
-                        <div class="linked-items">
-                            @if (links.Any())
+                        
+                        <div class="links-grid">
+                            @foreach (var service in categoryGroup)
                             {
-                                <div class="items-header">
-                                    <span>Linked Inventory Items (@links.Count)</span>
-                                </div>
-                                <table class="items-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Item</th>
-                                            <th>Qty Required</th>
-                                            <th>Stock</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var link in links)
+                                var links = ServiceLinksList.Where(l => l.ServiceId == service.ServiceId).ToList();
+                                <div class="service-card @(links.Any() ? "has-links" : "no-links")">
+                                    <div class="service-header">
+                                        <div class="service-info">
+                                            <h3>@service.ServiceName</h3>
+                                            <span class="service-category">@(service.ServiceCategory?.ServiceCategoryName ?? "Uncategorized")</span>
+                                        </div>
+                                        <div class="service-meta">
+                                            <span class="service-price">₱@service.StandardPrice.ToString("N2")</span>
+                                            @if (service.UsesInventory == true)
+                                            {
+                                                <span class="uses-inventory-badge">Uses Inventory</span>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <div class="linked-items">
+                                        @if (links.Any())
                                         {
-                                            <tr>
-                                                <td style="font-weight:600;">
-                                                    <span class="item-code">@link.InventoryItem?.ItemCode</span>
-                                                    @link.InventoryItem?.ItemName
-                                                </td>
-                                                <td>@link.QuantityRequired @link.InventoryItem?.UnitOfMeasure</td>
-                                                <td>
-                                                    @{
-                                                        var itemCurrentStock = link.InventoryItem?.CurrentStock ?? 0;
-                                                        var itemReorderPoint = link.InventoryItem?.ReorderPoint ?? 0;
-                                                    }
-                                                    @if (itemCurrentStock <= itemReorderPoint)
+                                            <div class="items-header">
+                                                <span>Linked Inventory Items (@links.Count)</span>
+                                            </div>
+                                            <table class="items-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Item</th>
+                                                        <th>Qty Required</th>
+                                                        <th>Stock</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var link in links)
                                                     {
-                                                        <span class="stock-low">@itemCurrentStock</span>
+                                                        <tr>
+                                                            <td style="font-weight:600;">
+                                                                <span class="item-code">@link.InventoryItem?.ItemCode</span>
+                                                                @link.InventoryItem?.ItemName
+                                                            </td>
+                                                            <td>@link.QuantityRequired @link.InventoryItem?.UnitOfMeasure</td>
+                                                            <td>
+                                                                @{
+                                                                    var itemCurrentStock = link.InventoryItem?.CurrentStock ?? 0;
+                                                                    var itemReorderPoint = link.InventoryItem?.ReorderPoint ?? 0;
+                                                                }
+                                                                @if (itemCurrentStock <= itemReorderPoint)
+                                                                {
+                                                                    <span class="stock-low">@itemCurrentStock</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="stock-ok">@itemCurrentStock</span>
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                <button class="btn-icon-small delete" @onclick="() => RemoveLink(link)" title="Remove Link">
+                                                                    ?
+                                                                </button>
+                                                            </td>
+                                                        </tr>
                                                     }
-                                                    else
-                                                    {
-                                                        <span class="stock-ok">@itemCurrentStock</span>
-                                                    }
-                                                </td>
-                                                <td>
-                                                    <button class="btn-icon-small delete" @onclick="() => RemoveLink(link)" title="Remove Link">
-                                                        ?
-                                                    </button>
-                                                </td>
-                                            </tr>
+                                                </tbody>
+                                            </table>
                                         }
-                                    </tbody>
-                                </table>
-                            }
-                            else
-                            {
-                                <div class="no-items">
-                                    <span>No inventory items linked</span>
-                                </div>
-                            }
-                        </div>
+                                        else
+                                        {
+                                            <div class="no-items">
+                                                <span>No inventory items linked</span>
+                                            </div>
+                                        }
+                                    </div>
 
-                        <div class="service-actions">
-                            <button class="btn-add-item" @onclick="() => OpenAddItemModal(service)">
-                                + Add Item
-                            </button>
-                            @if (service.UsesInventory != true && links.Any())
-                            {
-                                <button class="btn-enable-inventory" @onclick="() => EnableInventoryForService(service)">
-                                    Enable Inventory Tracking
-                                </button>
+                                    <div class="service-actions">
+                                        <button class="btn-add-item" @onclick="() => OpenAddItemModal(service)">
+                                            + Add Item
+                                        </button>
+                                        @if (service.UsesInventory != true && links.Any())
+                                        {
+                                            <button class="btn-enable-inventory" @onclick="() => EnableInventoryForService(service)">
+                                                Enable Inventory Tracking
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
                             }
                         </div>
                     </div>
@@ -167,7 +171,7 @@
             }
             else
             {
-                <div class="no-data" style="grid-column: span 2;">No services found</div>
+                <div class="no-data">No services found</div>
             }
         </div>
     }
@@ -188,7 +192,7 @@
                     <label class="form-label">Service *</label>
                     <select class="form-select" @bind="NewLink.ServiceId">
                         <option value="0">Select a Service</option>
-                        @foreach (var service in AllServices.Where(s => s.IsActive != null && s.IsActive.Value))
+                        @foreach (var service in AllServices)
                         {
                             <option value="@service.ServiceId">@service.ServiceName (?@service.StandardPrice.ToString("N2"))</option>
                         }
@@ -283,8 +287,6 @@
     private bool ShowAddItemModal = false;
     private bool ShowRemoveConfirm = false;
     private bool IsLoaded = false;
-    private bool HasError = false;
-    private string ErrorMessage = string.Empty;
 
     // Data
     private List<HestiaLink.Models.Service> AllServices = new();
@@ -322,16 +324,19 @@
     {
         try
         {
-            HasError = false;
-            ErrorMessage = string.Empty;
-
+            // Load all services (remove strict filtering to see all services)
             AllServices = await DbContext.Services
                 .Include(s => s.ServiceCategory)
-                .Where(s => s.IsActive != null && s.IsActive.Value)
-                .OrderBy(s => s.ServiceName)
+                .Include(s => s.ServiceInventories)
+                    .ThenInclude(si => si.InventoryItem)
+                .OrderBy(s => s.ServiceCategory != null ? s.ServiceCategory.ServiceCategoryName : "ZZZ")
+                .ThenBy(s => s.ServiceName)
                 .ToListAsync();
+            
+            Console.WriteLine($"Loaded {AllServices.Count} services from database");
 
             AllInventoryItems = await DbContext.InventoryItems
+                .Where(i => i.IsActive == null || i.IsActive.Value)
                 .OrderBy(i => i.ItemName)
                 .ToListAsync();
 
@@ -344,19 +349,20 @@
         }
         catch (Exception ex)
         {
-            HasError = true;
-            ErrorMessage = ex.Message;
+            Console.WriteLine($"Error loading service inventory links: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+            }
+            // Initialize empty lists to prevent null reference errors
+            AllServices = new List<HestiaLink.Models.Service>();
+            AllInventoryItems = new List<InventoryItem>();
+            ServiceLinksList = new List<ServiceInventory>();
             IsLoaded = true;
         }
     }
 
-    private async Task RetryLoad()
-    {
-        IsLoaded = false;
-        StateHasChanged();
-        await Task.Delay(500);
-        await LoadData();
-    }
 
     private void OnSearchChanged(ChangeEventArgs e)
     {
@@ -387,7 +393,10 @@
                 query = query.Where(s => !linkedServiceIds.Contains(s.ServiceId));
             }
 
-            return query.OrderBy(s => s.ServiceName).ToList();
+            return query
+                .OrderBy(s => s.ServiceCategory != null ? s.ServiceCategory.ServiceCategoryName : "ZZZ")
+                .ThenBy(s => s.ServiceName)
+                .ToList();
         }
     }
 
@@ -464,8 +473,16 @@
                 return;
             }
 
-            NewLink.CreatedDate = DateTime.Now;
-            DbContext.ServiceInventories.Add(NewLink);
+            // Create new link entity
+            var newLink = new ServiceInventory
+            {
+                ServiceId = NewLink.ServiceId,
+                InventoryItemId = NewLink.InventoryItemId,
+                QuantityRequired = NewLink.QuantityRequired,
+                CreatedDate = DateTime.Now
+            };
+
+            DbContext.ServiceInventories.Add(newLink);
 
             // Enable inventory for service if not already
             var service = await DbContext.Services.FirstOrDefaultAsync(s => s.ServiceId == NewLink.ServiceId);
@@ -482,6 +499,12 @@
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Error creating link: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+            }
             await JSRuntime.InvokeVoidAsync("alert", $"Error creating link: {ex.Message}");
         }
     }
@@ -508,9 +531,25 @@
                 return;
             }
 
-            NewLink.ServiceId = SelectedService.ServiceId;
-            NewLink.CreatedDate = DateTime.Now;
-            DbContext.ServiceInventories.Add(NewLink);
+            // Check for duplicate link
+            var exists = await DbContext.ServiceInventories
+                .AnyAsync(si => si.ServiceId == SelectedService.ServiceId && si.InventoryItemId == NewLink.InventoryItemId);
+            if (exists)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "This item is already linked to the service");
+                return;
+            }
+
+            // Create new link entity
+            var newLink = new ServiceInventory
+            {
+                ServiceId = SelectedService.ServiceId,
+                InventoryItemId = NewLink.InventoryItemId,
+                QuantityRequired = NewLink.QuantityRequired,
+                CreatedDate = DateTime.Now
+            };
+
+            DbContext.ServiceInventories.Add(newLink);
 
             // Enable inventory for service
             var service = await DbContext.Services.FirstOrDefaultAsync(s => s.ServiceId == SelectedService.ServiceId);
@@ -527,6 +566,12 @@
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Error adding item: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+            }
             await JSRuntime.InvokeVoidAsync("alert", $"Error adding item: {ex.Message}");
         }
     }
@@ -728,6 +773,13 @@
         font-weight: 600;
     }
 
+    /* Container */
+    .links-container {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
     /* Service Cards Grid */
     .links-grid {
         display: grid;
@@ -768,6 +820,39 @@
     .service-category {
         font-size: 0.8rem;
         opacity: 0.85;
+        background: rgba(15, 118, 110, 0.15);
+        color: var(--color-dark-teal);
+        padding: 4px 10px;
+        border-radius: 12px;
+        display: inline-block;
+        margin-top: 4px;
+        font-weight: 600;
+    }
+
+    .category-section {
+        margin-bottom: 24px;
+    }
+
+    .category-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background: linear-gradient(90deg, #064e49, #0f766e);
+        color: white;
+        border-radius: 8px;
+        margin-bottom: 16px;
+    }
+
+    .category-title {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .category-count {
+        font-size: 0.85rem;
+        opacity: 0.9;
     }
 
     .service-meta {
@@ -983,13 +1068,6 @@
         font-weight: 600;
     }
 
-    .error-message {
-        background: #fef2f2;
-        padding: 20px;
-        border-radius: 12px;
-        text-align: center;
-        color: #991b1b;
-    }
 
     @@media (max-width: 1200px) {
         .summary-cards {

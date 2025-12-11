@@ -344,19 +344,35 @@ namespace HestiaLink.Services
         /// </summary>
         public async Task<bool> UpdatePurchaseAsync(InventoryPurchase purchase)
         {
-            var existing = await _context.InventoryPurchases.FirstOrDefaultAsync(p => p.PurchaseID == purchase.PurchaseID);
-            if (existing == null) return false;
+            try
+            {
+                var existing = await _context.InventoryPurchases
+                    .FirstOrDefaultAsync(p => p.PurchaseID == purchase.PurchaseID);
+                
+                if (existing == null) return false;
 
-            existing.ItemID = purchase.ItemID;
-            existing.SupplierID = purchase.SupplierID;
-            existing.Quantity = purchase.Quantity;
-            existing.UnitPrice = purchase.UnitPrice;
-            existing.TotalAmount = purchase.Quantity * purchase.UnitPrice;
-            existing.Notes = purchase.Notes;
-            existing.PurchaseDate = purchase.PurchaseDate;
+                // Only allow editing if status is PENDING
+                if (existing.PurchaseStatus != "PENDING")
+                {
+                    throw new InvalidOperationException("Only pending purchase orders can be edited.");
+                }
 
-            await _context.SaveChangesAsync();
-            return true;
+                existing.ItemID = purchase.ItemID;
+                existing.SupplierID = purchase.SupplierID;
+                existing.Quantity = purchase.Quantity;
+                existing.UnitPrice = purchase.UnitPrice;
+                existing.TotalAmount = purchase.Quantity * purchase.UnitPrice;
+                existing.Notes = purchase.Notes;
+                existing.PurchaseDate = purchase.PurchaseDate;
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating purchase order: {ex.Message}");
+                throw;
+            }
         }
 
         /// <summary>
@@ -644,7 +660,7 @@ namespace HestiaLink.Services
                 .Include(st => st.Service)
                 .FirstOrDefaultAsync(st => st.ServiceTransactionId == serviceTransactionId);
 
-            if (transaction?.Service == null || transaction.Service.UsesInventory != true)
+            if (transaction?.Service == null)
                 return consumptions;
 
             // Get all inventory links for this service
@@ -653,14 +669,19 @@ namespace HestiaLink.Services
                 .Where(si => si.ServiceId == transaction.ServiceId)
                 .ToListAsync();
 
+            // If no links exist, return empty list
+            if (!links.Any())
+                return consumptions;
+
             foreach (var link in links)
             {
                 if (link.InventoryItem == null || link.InventoryItem.IsActive != true)
                     continue;
 
                 // Calculate quantity to consume (multiply by transaction quantity)
-                var quantityToConsume = link.QuantityRequired * transaction.Quantity;
-                var currentStock = link.InventoryItem.CurrentStock ?? 0;
+                var transactionQty = (decimal)(transaction.Quantity ?? 1);
+                var quantityToConsume = link.QuantityRequired * transactionQty;
+                var currentStock = (decimal)(link.InventoryItem.CurrentStock ?? 0);
 
                 // Skip if no stock available
                 if (currentStock < quantityToConsume)
@@ -671,15 +692,16 @@ namespace HestiaLink.Services
                 {
                     ServiceTransactionId = serviceTransactionId,
                     InventoryItemId = link.InventoryItemId,
-                    QuantityConsumed = quantityToConsume ?? 0,
+                    QuantityConsumed = quantityToConsume,
                     ConsumptionDate = DateTime.Now,
                     RoomNumber = roomNumber
                 };
 
                 _context.InventoryConsumptions.Add(consumption);
 
-                // Deduct from stock
-                link.InventoryItem.CurrentStock = Math.Max(0, currentStock - (int)Math.Ceiling(quantityToConsume ?? 0));
+                // Deduct from stock (convert decimal result to int)
+                var newStock = Math.Max(0, currentStock - quantityToConsume);
+                link.InventoryItem.CurrentStock = (int)Math.Round(newStock);
 
                 consumptions.Add(consumption);
             }

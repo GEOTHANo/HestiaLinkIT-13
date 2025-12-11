@@ -9,8 +9,11 @@
 
 <div class="page-wrapper">
     <header class="page-topbar">
-        <h1>Payroll Processing</h1>
-        <span class="page-topbar-subtitle">Salary Management & Tax Processing</span>
+        <div>
+            <h1>Payroll Processing</h1>
+            <span class="page-topbar-subtitle">Salary Management & Tax Processing</span>
+        </div>
+        <UserDropdown />
     </header>
 
     <section class="page-content">
@@ -680,9 +683,95 @@
 
         try
         {
-            // Calculate pay values
-            decimal regularPay = (SelectedEmployee.TotalRegularHours ?? 0) * (SelectedEmployee.HourlyRate ?? 0);
-            decimal overtimePay = (SelectedEmployee.TotalOvertimeHours ?? 0) * ((SelectedEmployee.HourlyRate ?? 0) * 1.5m);
+            var periodStart = DateTime.Parse(SelectedPeriod);
+            var periodEnd = periodStart.AddDays(14);
+
+            // Get first active tax ID if available
+            int? taxId = TaxRates.FirstOrDefault(t => t.Status == "Active")?.TaxId;
+
+            // Calculate total hours from attendance records for this period
+            var periodStartDate = DateOnly.FromDateTime(periodStart);
+            var periodEndDate = DateOnly.FromDateTime(periodEnd);
+            
+            // Get all attendance records for this employee within the period
+            var attendanceRecords = await Context.Attendances
+                .Include(a => a.Schedule)
+                .Where(a => a.Schedule != null && 
+                           a.Schedule.EmployeeId == SelectedEmployee.EmployeeId &&
+                           a.AttendanceDate >= periodStartDate &&
+                           a.AttendanceDate <= periodEndDate)
+                .ToListAsync();
+
+            // Calculate total hours from attendance records
+            decimal calculatedTotalHours = attendanceRecords
+                .Sum(a => (a.RegularHours ?? 0) + (a.OvertimeHours ?? 0));
+            
+            decimal calculatedRegularHours = attendanceRecords
+                .Sum(a => a.RegularHours ?? 0);
+            
+            decimal calculatedOvertimeHours = attendanceRecords
+                .Sum(a => a.OvertimeHours ?? 0);
+
+            // Get first attendance ID for reference (or use the first one found)
+            int? attendanceId = attendanceRecords.FirstOrDefault()?.AttendanceId;
+
+            // If no attendance records found for the period, find any attendance for this employee
+            if (!attendanceId.HasValue)
+            {
+                var anyAttendance = await Context.Attendances
+                    .Include(a => a.Schedule)
+                    .Where(a => a.Schedule != null && a.Schedule.EmployeeId == SelectedEmployee.EmployeeId)
+                    .OrderByDescending(a => a.AttendanceDate)
+                    .FirstOrDefaultAsync();
+                
+                attendanceId = anyAttendance?.AttendanceId;
+            }
+
+            // If still no attendance exists, create a placeholder attendance record
+            if (!attendanceId.HasValue)
+            {
+                // Find or create a schedule for the employee
+                var schedule = await Context.Schedules
+                    .Where(s => s.EmployeeId == SelectedEmployee.EmployeeId && s.IsActive == true)
+                    .OrderByDescending(s => s.ScheduleDate)
+                    .FirstOrDefaultAsync();
+
+                if (schedule == null)
+                {
+                    // Create a default schedule for the period start date
+                    schedule = new HestiaLink.Models.Schedule
+                    {
+                        EmployeeId = SelectedEmployee.EmployeeId,
+                        ScheduleDate = periodStartDate,
+                        ScheduledStart = TimeOnly.FromTimeSpan(new TimeSpan(9, 0, 0)), // 9 AM default
+                        ScheduledEnd = TimeOnly.FromTimeSpan(new TimeSpan(17, 0, 0)), // 5 PM default
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    Context.Schedules.Add(schedule);
+                    await Context.SaveChangesAsync();
+                }
+
+                // Create a placeholder attendance record
+                var placeholderAttendance = new HestiaLink.Models.Attendance
+                {
+                    ScheduleId = schedule.ScheduleId,
+                    AttendanceDate = periodStartDate,
+                    AttendanceStatus = "Present",
+                    RegularHours = calculatedRegularHours,
+                    OvertimeHours = calculatedOvertimeHours,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                Context.Attendances.Add(placeholderAttendance);
+                await Context.SaveChangesAsync();
+                attendanceId = placeholderAttendance.AttendanceId;
+            }
+
+            // Calculate pay values using calculated hours from attendance
+            decimal regularPay = calculatedRegularHours * (SelectedEmployee.HourlyRate ?? 0);
+            decimal overtimePay = calculatedOvertimeHours * ((SelectedEmployee.HourlyRate ?? 0) * 1.5m);
             decimal grossPay = regularPay + overtimePay;
 
             // Calculate tax amount from active taxes
@@ -692,60 +781,54 @@
             decimal taxAmount = grossPay * (activeTaxPercentage / 100m);
             decimal netPay = grossPay - taxAmount;
 
-            var periodStart = DateTime.Parse(SelectedPeriod);
-            var periodEnd = periodStart.AddDays(14);
+            // CRITICAL FIX: Get or create TotalIncomeID for this payroll period
+            var periodStartDateOnly = DateOnly.FromDateTime(periodStart);
+            var periodEndDateOnly = DateOnly.FromDateTime(periodEnd);
 
-            // Get first active tax ID if available
-            int? taxId = TaxRates.FirstOrDefault(t => t.Status == "Active")?.TaxId;
-
-            // Find attendance
-            var attendance = await Context.Attendances
-                .Include(a => a.Schedule)
-                .FirstOrDefaultAsync(a => a.Schedule != null && a.Schedule.EmployeeId == SelectedEmployee.EmployeeId);
-
-            int? attendanceId = attendance?.AttendanceId;
-
-            // CRITICAL FIX: Get or create IncomeID for this payroll
-            var incomeStart = new DateTime(periodStart.Year, periodStart.Month, 1);
-            var incomeEnd = incomeStart.AddMonths(1).AddDays(-1);
-
-            var income = await Context.Incomes
-                .Where(i => i.IncomeDate >= DateOnly.FromDateTime(incomeStart) && i.IncomeDate <= DateOnly.FromDateTime(incomeEnd))
-                .OrderByDescending(i => i.IncomeDate)
+            var totalIncome = await Context.TotalIncomes
+                .Where(ti => ti.PeriodStart <= periodStartDateOnly && ti.PeriodEnd >= periodEndDateOnly)
+                .OrderByDescending(ti => ti.CreatedDate)
                 .FirstOrDefaultAsync();
 
-            int? incomeId = income?.IncomeId;
+            int? incomeId = totalIncome?.IncomeId;
 
-            // If no income record exists for this month, create one
+            // If no TotalIncome record exists for this period, create one
             if (incomeId == null)
             {
-                // Create a default income record for the month
-                var newIncome = new Income
+                // Create a default TotalIncome record for the period
+                var newTotalIncome = new HestiaLink.Models.TotalIncome
                 {
-                    IncomeDate = DateOnly.FromDateTime(incomeStart),
-                    Amount = 100000m, // Default starting amount
-                    Description = $"Monthly income for {incomeStart:MMMM yyyy}",
+                    PeriodStart = periodStartDateOnly,
+                    PeriodEnd = periodEndDateOnly,
+                    TotalAmount = 100000m, // Default starting amount
+                    Status = "Active",
                     CreatedDate = DateTime.Now
                 };
-                Context.Incomes.Add(newIncome);
+                Context.TotalIncomes.Add(newTotalIncome);
                 await Context.SaveChangesAsync();
-                incomeId = newIncome.IncomeId;
+                incomeId = newTotalIncome.IncomeId;
             }
 
-            // Check if payroll already exists for this period
+            // Check if payroll already exists for this period and employee
+            // We need to check via the attendance's schedule to find the employee
             var existingPayroll = await Context.Payrolls
-                .FirstOrDefaultAsync(p => p.PeriodStart == DateOnly.FromDateTime(periodStart) && p.PeriodEnd == DateOnly.FromDateTime(periodEnd) &&
-                                        p.AttendanceId == attendanceId);
+                .Include(p => p.Attendance)
+                    .ThenInclude(a => a.Schedule)
+                .Where(p => p.PeriodStart == DateOnly.FromDateTime(periodStart) && 
+                           p.PeriodEnd == DateOnly.FromDateTime(periodEnd) &&
+                           p.Attendance.Schedule != null &&
+                           p.Attendance.Schedule.EmployeeId == SelectedEmployee.EmployeeId)
+                .FirstOrDefaultAsync();
 
             if (existingPayroll != null)
             {
                 // Store old status for comparison
                 var oldStatus = existingPayroll.Status;
 
-                // Update existing payroll
+                // Update existing payroll with calculated hours from attendance
                 existingPayroll.Status = SelectedPaymentStatus;
-                existingPayroll.TotalHours = SelectedEmployee.TotalHours;
-                existingPayroll.OvertimeHours = SelectedEmployee.TotalOvertimeHours;
+                existingPayroll.TotalHours = calculatedTotalHours;
+                existingPayroll.OvertimeHours = calculatedOvertimeHours;
                 existingPayroll.HourlyRate = SelectedEmployee.HourlyRate;
                 existingPayroll.RegularPay = regularPay;
                 existingPayroll.OvertimePay = overtimePay;
@@ -755,28 +838,28 @@
                 existingPayroll.TaxId = taxId;
                 existingPayroll.IncomeId = incomeId; // Always set IncomeID
 
-                // CRITICAL FIX: Handle income adjustment properly
-                var incomeRecord = await Context.Incomes.FindAsync(incomeId);
-                if (incomeRecord != null)
+                // CRITICAL FIX: Handle TotalIncome adjustment properly
+                var totalIncomeRecord = await Context.TotalIncomes.FindAsync(incomeId);
+                if (totalIncomeRecord != null)
                 {
                     // If changing from non-Paid to Paid, subtract
                     if (oldStatus != "Paid" && SelectedPaymentStatus == "Paid")
                     {
-                        incomeRecord.Amount -= grossPay;
-                        if (incomeRecord.Amount < 0) incomeRecord.Amount = 0;
+                        totalIncomeRecord.TotalAmount = (totalIncomeRecord.TotalAmount ?? 0) - grossPay;
+                        if (totalIncomeRecord.TotalAmount < 0) totalIncomeRecord.TotalAmount = 0;
                     }
                     // If changing from Paid to non-Paid, add back
                     else if (oldStatus == "Paid" && SelectedPaymentStatus != "Paid")
                     {
-                        incomeRecord.Amount += grossPay;
+                        totalIncomeRecord.TotalAmount = (totalIncomeRecord.TotalAmount ?? 0) + grossPay;
                     }
                     // If staying as Paid and amount changed, adjust
                     else if (oldStatus == "Paid" && SelectedPaymentStatus == "Paid")
                     {
                         // Calculate the difference
                         decimal difference = grossPay - (existingPayroll.GrossPay ?? 0);
-                        incomeRecord.Amount -= difference;
-                        if (incomeRecord.Amount < 0) incomeRecord.Amount = 0;
+                        totalIncomeRecord.TotalAmount = (totalIncomeRecord.TotalAmount ?? 0) - difference;
+                        if (totalIncomeRecord.TotalAmount < 0) totalIncomeRecord.TotalAmount = 0;
                     }
                 }
 
@@ -784,16 +867,16 @@
             }
             else
             {
-                // Create new payroll
+                // Create new payroll with calculated hours from attendance
                 var newPayroll = new Payroll
                 {
-                    AttendanceId = attendanceId ?? 0,
+                    AttendanceId = attendanceId.Value, // Now guaranteed to have a value
                     IncomeId = incomeId, // Always set IncomeID
                     TaxId = taxId,
                     PeriodStart = DateOnly.FromDateTime(periodStart),
                     PeriodEnd = DateOnly.FromDateTime(periodEnd),
-                    TotalHours = SelectedEmployee.TotalHours,
-                    OvertimeHours = SelectedEmployee.TotalOvertimeHours,
+                    TotalHours = calculatedTotalHours,
+                    OvertimeHours = calculatedOvertimeHours,
                     HourlyRate = SelectedEmployee.HourlyRate,
                     RegularPay = regularPay,
                     OvertimePay = overtimePay,
@@ -804,14 +887,14 @@
                     CreatedDate = DateTime.Now
                 };
 
-                // CRITICAL FIX: Subtract from income only if status is Paid
+                // CRITICAL FIX: Subtract from TotalIncome only if status is Paid
                 if (SelectedPaymentStatus == "Paid" && incomeId.HasValue)
                 {
-                    var incomeRecord = await Context.Incomes.FindAsync(incomeId.Value);
-                    if (incomeRecord != null)
+                    var totalIncomeRecord = await Context.TotalIncomes.FindAsync(incomeId.Value);
+                    if (totalIncomeRecord != null)
                     {
-                        incomeRecord.Amount -= grossPay;
-                        if (incomeRecord.Amount < 0) incomeRecord.Amount = 0;
+                        totalIncomeRecord.TotalAmount = (totalIncomeRecord.TotalAmount ?? 0) - grossPay;
+                        if (totalIncomeRecord.TotalAmount < 0) totalIncomeRecord.TotalAmount = 0;
                     }
                 }
 
@@ -877,7 +960,7 @@
         }
     }
 
-    // CRITICAL FIX: New method to properly refresh the view data
+    // CRITICAL FIX: New method to properly refresh the view data with actual Payroll status
     private async Task RefreshPayrollViewData()
     {
         try
@@ -885,11 +968,42 @@
             // Clear the current list
             EmployeePayrollSummary.Clear();
 
-            // Force a fresh query from the database
+            // Force a fresh query from the database view
             var freshData = await Context.VwEmployeePayrollSummaries
                 .AsNoTracking()
                 .OrderBy(e => e.EmployeeName)
                 .ToListAsync();
+
+            // Get the current period dates
+            var periodStart = DateTime.Parse(SelectedPeriod);
+            var periodEnd = periodStart.AddDays(14);
+            var periodStartDate = DateOnly.FromDateTime(periodStart);
+            var periodEndDate = DateOnly.FromDateTime(periodEnd);
+
+            // Get actual Payroll records for this period to update PaymentStatus
+            var payrollRecords = await Context.Payrolls
+                .Include(p => p.Attendance)
+                    .ThenInclude(a => a.Schedule)
+                .Where(p => p.PeriodStart == periodStartDate && 
+                           p.PeriodEnd == periodEndDate &&
+                           p.Attendance.Schedule != null)
+                .AsNoTracking()
+                .ToListAsync();
+
+            // Create a dictionary to map EmployeeId to Payroll Status
+            var payrollStatusMap = payrollRecords
+                .Where(p => p.Attendance?.Schedule != null)
+                .GroupBy(p => p.Attendance.Schedule.EmployeeId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p.CreatedDate).First().Status ?? "Pending");
+
+            // Update PaymentStatus in the view data based on actual Payroll records
+            foreach (var employee in freshData)
+            {
+                if (payrollStatusMap.ContainsKey(employee.EmployeeId))
+                {
+                    employee.PaymentStatus = payrollStatusMap[employee.EmployeeId];
+                }
+            }
 
             // Update the list
             EmployeePayrollSummary = freshData;
@@ -900,6 +1014,7 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error refreshing payroll view: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
         }
     }
 }

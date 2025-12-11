@@ -1,0 +1,167 @@
+@inject HestiaLink.Services.UserSession UserSession
+@inject NavigationManager Navigation
+
+<div class="user-dropdown-container">
+    <button class="user-icon-btn" @onclick="ToggleDropdown" @onclick:stopPropagation="true">
+        <span class="user-icon">👤</span>
+    </button>
+    
+    @if (ShowDropdown)
+    {
+        <div class="user-dropdown-backdrop" @onclick="CloseDropdown"></div>
+        <div class="user-dropdown-menu" @onclick:stopPropagation="true">
+            <div class="user-dropdown-header">
+                <div class="user-dropdown-name">@UserSession.Username</div>
+                <div class="user-dropdown-role">@UserSession.Role</div>
+            </div>
+            <div class="user-dropdown-divider"></div>
+            <button class="user-dropdown-item" @onclick="HandleLogout">
+                <span>🚪</span>
+                <span>Logout</span>
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    private bool ShowDropdown = false;
+
+    private void ToggleDropdown()
+    {
+        ShowDropdown = !ShowDropdown;
+    }
+
+    private void CloseDropdown()
+    {
+        ShowDropdown = false;
+    }
+
+    private void HandleLogout()
+    {
+        ShowDropdown = false;
+        UserSession.Logout();
+        Navigation.NavigateTo("/loginpage", forceLoad: true);
+    }
+}
+
+<style>
+    .user-dropdown-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .user-icon-btn {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        padding: 0;
+        font-size: 1.3rem;
+    }
+
+    .user-icon-btn:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: scale(1.05);
+    }
+
+    .user-icon-btn:active {
+        transform: scale(0.95);
+    }
+
+    .user-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        filter: grayscale(100%) brightness(0.3);
+    }
+
+    .user-dropdown-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 999;
+        background: transparent;
+    }
+
+    .user-dropdown-menu {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        min-width: 200px;
+        z-index: 1000;
+        overflow: hidden;
+        animation: slideDown 0.2s ease;
+    }
+
+    @@keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .user-dropdown-header {
+        padding: 12px 16px;
+        background: var(--color-dark-teal);
+        color: white;
+    }
+
+    .user-dropdown-name {
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 4px;
+    }
+
+    .user-dropdown-role {
+        font-size: 0.85rem;
+        opacity: 0.9;
+        text-transform: capitalize;
+    }
+
+    .user-dropdown-divider {
+        height: 1px;
+        background: #e5e7eb;
+    }
+
+    .user-dropdown-item {
+        width: 100%;
+        padding: 12px 16px;
+        border: none;
+        background: white;
+        color: #374151;
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.9rem;
+        transition: background 0.2s;
+    }
+
+    .user-dropdown-item:hover {
+        background: #f3f4f6;
+    }
+
+    .user-dropdown-item span:first-child {
+        font-size: 1.1rem;
+        filter: grayscale(100%) brightness(0.3);
+    }
+</style>
+

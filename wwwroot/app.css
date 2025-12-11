@@ -35,6 +35,32 @@ body {
     font-family: 'Inter', sans-serif;
 }
 
+/* --- GLOBAL ICON STYLING - MAKE ALL ICONS BLACK (LIGHT GRAY) --- */
+/* Make all emoji icons dark gray using CSS filter - ONLY ICONS, NOT TEXT */
+.sidebar-nav-icon,
+.input-icon,
+.user-icon,
+.action-icon {
+    filter: grayscale(100%) brightness(0.3) !important;
+}
+
+/* Override for active sidebar items - keep dark gray */
+.sidebar-nav-item.active .sidebar-nav-icon {
+    filter: grayscale(100%) brightness(0.3) !important;
+    color: var(--color-dark-teal);
+}
+
+/* Make emojis in sidebar section headers dark gray */
+.sidebar-section-header.open .sidebar-nav-icon {
+    filter: grayscale(100%) brightness(0.3);
+    color: var(--color-dark-teal);
+}
+
+/* Make emojis in user dropdown dark gray - only the icon span */
+.user-dropdown-item span:first-child {
+    filter: grayscale(100%) brightness(0.3);
+}
+
 /* --- LOGIN PAGE STYLES --- */
 
 .login-layout-root {
@@ -128,7 +154,8 @@ body {
     margin-right: 12px;
     display: flex;
     align-items: center;
-    color: var(--color-black);
+    color: #333333;
+    filter: grayscale(100%) brightness(0.3);
 }
 
 .input-field {
@@ -529,13 +556,13 @@ body {
     width: 1.2rem;
     text-align: center;
     transition: transform 0.2s;
-    filter: brightness(0) invert(1);
-    color: white;
+    filter: grayscale(100%) brightness(0.3);
+    color: #333333;
 }
 
 .sidebar-nav-item.active .sidebar-nav-icon {
     transform: scale(1.1);
-    filter: brightness(0.3);
+    filter: grayscale(100%) brightness(0.3);
     color: var(--color-dark-teal);
 }
 
@@ -573,8 +600,7 @@ body {
 }
 
 .sidebar-section-header.open .sidebar-nav-icon {
-    /* Filter to match var(--color-dark-teal) #00535b */
-    filter: invert(26%) sepia(19%) saturate(3486%) hue-rotate(152deg) brightness(96%) contrast(101%);
+    filter: grayscale(100%) brightness(0.3);
     color: var(--color-dark-teal);
 }
 
@@ -723,6 +749,34 @@ body {
     flex: 1;
     padding: 32px 40px 40px 40px;
     background-color: var(--color-cream);
+}
+
+/* Topbar Header with Logout Button */
+.page-topbar-header {
+    height: 70px;
+    background-color: var(--color-dark-teal);
+    color: var(--color-white);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 40px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.topbar-logout-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    background-color: #e35252;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.topbar-logout-btn:hover {
+    background-color: #c74141;
 }
 
 .dashboard-row-4 {

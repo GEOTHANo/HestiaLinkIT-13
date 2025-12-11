@@ -10,7 +10,7 @@
             <h1>Inventory Alerts</h1>
             <div class="page-topbar-subtitle">Low Stock Warnings & Reorder Suggestions</div>
         </div>
-        <div class="page-topbar-date">@DateTime.Now.ToString("MMMM dd, yyyy")</div>
+        <UserDropdown />
     </div>
 
     <div class="page-content">
@@ -119,7 +119,7 @@
                         </div>
                     </div>
                     <div class="panel-footer" style="padding:20px;">
-                        <button class="btn-white-outline" @onclick="ExportReorderList">📄 Export Reorder List</button>
+                        <button class="btn-white-outline" @onclick="ExportReorderList">📄 Export to PDF</button>
                     </div>
                 </div>
             </div>
@@ -206,7 +206,37 @@
 
     private async Task ExportReorderList()
     {
-        await JSRuntime.InvokeVoidAsync("alert", "Exporting reorder list to PDF...");
+        try
+        {
+            var exportData = new
+            {
+                outOfStockCount = OutOfStockCount,
+                lowStockCount = LowStockCount,
+                nearReorderCount = NearReorderCount,
+                wellStockedCount = WellStockedCount,
+                totalReorderCost = TotalReorderCost,
+                items = LowStockItems.Select(item =>
+                {
+                    var orderQty = Math.Max((item.ReorderPoint ?? 0) * 2 - (item.CurrentStock ?? 0), 0);
+                    return new
+                    {
+                        itemCode = item.ItemCode ?? "",
+                        itemName = item.ItemName ?? "",
+                        category = item.Category ?? "",
+                        currentStock = item.CurrentStock ?? 0,
+                        reorderPoint = item.ReorderPoint ?? 0,
+                        suggestedOrder = orderQty,
+                        unitCost = item.UnitCost
+                    };
+                }).ToArray()
+            };
+
+            await JSRuntime.InvokeVoidAsync("exportStockAlertsToPDF", exportData);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error exporting PDF: {ex.Message}");
+        }
     }
 }
 

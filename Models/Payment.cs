@@ -24,6 +24,4 @@ public partial class Payment
     public virtual Bill? Bill { get; set; }
 
     public virtual ICollection<Income> Incomes { get; set; } = new List<Income>();
-
-    public virtual Employee? ProcessedByNavigation { get; set; }
 }

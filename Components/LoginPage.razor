@@ -38,15 +38,12 @@
                 <div class="input-wrapper">
                     <span class="input-icon">🔒</span>
                     <input id="password" 
-                           type="@(ShowPassword ? "text" : "password")" 
+                           type="password" 
                            class="input-field" 
                            placeholder="Enter your password" 
                            @bind="Password"
                            @onkeydown="HandleKeyPress"
                            disabled="@IsLoading" />
-                    <span class="eye-icon-modern" @onclick="TogglePasswordVisibility" style="cursor: pointer;">
-                        @(ShowPassword ? "👁️" : "👁️")
-                    </span>
                 </div>
             </div>
 
@@ -68,37 +65,6 @@
             {
                 <p class="error-message-modern">@Message</p>
             }
-            
-            <!-- Connection Status Debug -->
-            <div style="margin-top: 10px; font-size: 0.75rem; color: #64748b; text-align: center;">
-                Status: @ConnectionStatus
-            </div>
-
-            @if (DebugUsers != null && DebugUsers.Any())
-            {
-                <div style="margin-top: 20px; padding: 10px; background: rgba(255, 255, 255, 0.9); border-radius: 8px; font-size: 0.7rem; color: #333; max-height: 150px; overflow-y: auto;">
-                    <p style="font-weight: bold; margin-bottom: 5px; text-align: center;">🧪 Testing Credentials</p>
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background: #eee;">
-                                <th style="padding: 2px; border: 1px solid #ddd;">User</th>
-                                <th style="padding: 2px; border: 1px solid #ddd;">Pass</th>
-                                <th style="padding: 2px; border: 1px solid #ddd;">Role</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var u in DebugUsers)
-                            {
-                                <tr>
-                                    <td style="padding: 2px; border: 1px solid #ddd; text-align: center;">@u.Username</td>
-                                    <td style="padding: 2px; border: 1px solid #ddd; text-align: center;">@u.Password</td>
-                                    <td style="padding: 2px; border: 1px solid #ddd; text-align: center;">@u.Role</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
         </div>
     </div>
 </div>
@@ -107,34 +73,7 @@
     private string Username { get; set; } = "";
     private string Password { get; set; } = "";
     private string Message { get; set; } = "";
-    private bool ShowPassword { get; set; } = false;
     private bool IsLoading { get; set; } = false;
-    private string ConnectionStatus { get; set; } = "Checking connection...";
-    private List<SystemUser> DebugUsers { get; set; } = new();
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            var canConnect = await DbContext.Database.CanConnectAsync();
-            if (canConnect)
-            {
-                var userCount = await DbContext.SystemUsers.CountAsync();
-                ConnectionStatus = $"Connected to DB. Users found: {userCount}";
-                
-                // Fetch users for debug display
-                DebugUsers = await DbContext.SystemUsers.ToListAsync();
-            }
-            else
-            {
-                ConnectionStatus = "Cannot connect to Database.";
-            }
-        }
-        catch (Exception ex)
-        {
-            ConnectionStatus = $"DB Error: {ex.Message}";
-        }
-    }
 
     private async void HandleKeyPress(KeyboardEventArgs e)
     {
@@ -197,8 +136,4 @@
         }
     }
 
-    private void TogglePasswordVisibility()
-    {
-        ShowPassword = !ShowPassword;
-    }
 }

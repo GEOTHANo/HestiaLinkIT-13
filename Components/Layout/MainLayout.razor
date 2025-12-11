@@ -29,11 +29,13 @@
             }
             else
             {
-                <!-- Dashboard Overview - Not for Housekeeping -->
-                <button class="sidebar-nav-item @(GetActiveClass("/dashboard"))" @onclick='() => NavigateTo("/dashboard")'>
-                    <span class="sidebar-nav-icon">🏠</span>
-                    <span>Dashboard</span>
-                </button>
+                @* Only Administrator may see the main Dashboard. Housekeeping keeps My Dashboard above. *@
+                @if (UserSession.Role == "Administrator")
+                {
+                    <button class="sidebar-nav-item @(GetActiveClass("/dashboard"))" @onclick='() => NavigateTo("/dashboard")'>
+                        <span>Dashboard</span>
+                    </button>
+                }
 
                 <!-- RESERVATION: Visible to Admin, FrontDesk -->
                 @if (UserSession.Role == "Administrator" || UserSession.Role == "FrontDesk")
@@ -111,7 +113,6 @@
                             <button class="sidebar-subnav-item @(GetActiveClass("/finance/billing-invoices"))" @onclick='() => NavigateTo("/finance/billing-invoices")'>Billing Invoices</button>
                             <button class="sidebar-subnav-item @(GetActiveClass("/finance/expense-tracking"))" @onclick='() => NavigateTo("/finance/expense-tracking")'>Expense Tracking</button>
                             <button class="sidebar-subnav-item @(GetActiveClass("/finance/financial-reports"))" @onclick='() => NavigateTo("/finance/financial-reports")'>Financial Reports</button>
-                            <button class="sidebar-subnav-item @(GetActiveClass("/finance/tax-management"))" @onclick='() => NavigateTo("/finance/tax-management")'>Tax Management</button>
                             <button class="sidebar-subnav-item @(GetActiveClass("/finance/payment-processing"))" @onclick='() => NavigateTo("/finance/payment-processing")'>Payment Processing</button>
                         </div>
                     </div>
@@ -132,7 +133,6 @@
                             <button class="sidebar-subnav-item @(GetActiveClass("/hr/employee-management"))" @onclick='() => NavigateTo("/hr/employee-management")'>Employee Management</button>
                             <button class="sidebar-subnav-item @(GetActiveClass("/hr/department-setup"))" @onclick='() => NavigateTo("/hr/department-setup")'>Department Setup</button>
                             <button class="sidebar-subnav-item @(GetActiveClass("/hr/position-setup"))" @onclick='() => NavigateTo("/hr/position-setup")'>Position Setup</button>
-                            <button class="sidebar-subnav-item @(GetActiveClass("/hr/user-accounts"))" @onclick='() => NavigateTo("/hr/user-accounts")'>User Accounts</button>
                             <button class="sidebar-subnav-item @(GetActiveClass("/hr/attendance"))" @onclick='() => NavigateTo("/hr/attendance")'>Attendance</button>
                             <button class="sidebar-subnav-item @(GetActiveClass("/hr/payroll-processing"))" @onclick='() => NavigateTo("/hr/payroll-processing")'>Payroll Processing</button>
                         </div>
@@ -159,18 +159,11 @@
             }
         </nav>
 
-        <button class="sidebar-logout" @onclick='HandleLogout'>Logout (@UserSession.Username)</button>
     </aside>
 
     <main class="dashboard-main">
         @Body
     </main>
-</div>
-
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">×</a>
 </div>
 
 @code {
@@ -213,4 +206,4 @@
     {
         return Navigation.Uri.Contains(uri, StringComparison.OrdinalIgnoreCase) ? "active" : "";
     }
-}}
+}

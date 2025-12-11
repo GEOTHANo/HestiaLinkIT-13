@@ -145,8 +145,14 @@ public partial class HestiaLinkContext : DbContext
         // Configure ServiceInventory Relationships
         modelBuilder.Entity<ServiceInventory>()
             .HasOne(si => si.Service)
-            .WithMany()
+            .WithMany(s => s.ServiceInventories)
             .HasForeignKey(si => si.ServiceId)
+            .OnDelete(DeleteBehavior.Restrict);
+        
+        modelBuilder.Entity<ServiceInventory>()
+            .HasOne(si => si.InventoryItem)
+            .WithMany()
+            .HasForeignKey(si => si.InventoryItemId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Configure CleaningTask (Task) Relationships
