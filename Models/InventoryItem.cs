@@ -41,6 +41,15 @@ namespace HestiaLink.Models
         [ForeignKey("SupplierID")]
         public virtual Supplier? Supplier { get; set; }
         
+        // Service Category relationship (for service-based inventory deduction)
+        public int? ServiceCategoryId { get; set; }
+
+        [ForeignKey("ServiceCategoryId")]
+        public virtual ServiceCategory? ServiceCategory { get; set; }
+
+        // Flag to mark if item is used by services
+        public bool? IsServiceItem { get; set; } = false;
+        
         // Navigation properties for relationships
         public virtual ICollection<InventoryConsumption> InventoryConsumptions { get; set; } = new List<InventoryConsumption>();
 

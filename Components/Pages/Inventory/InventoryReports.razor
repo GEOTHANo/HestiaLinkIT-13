@@ -15,69 +15,73 @@
     </div>
 
     <div class="page-content">
-        @* ===== DATE FILTER ===== *@
-    <div class="report-filters">
-        <div class="filter-group">
-            <label>From:</label>
-            <input type="date" @bind="StartDate" class="date-input" />
-        </div>
-        <div class="filter-group">
-            <label>To:</label>
-            <input type="date" @bind="EndDate" class="date-input" />
-        </div>
-        <div class="filter-group">
-            <label>Category:</label>
-            <select @bind="FilterCategory" class="filter-select">
-                <option value="">All Categories</option>
-                @foreach (var category in Categories)
-                {
-                    <option value="@category">@category</option>
-                }
-            </select>
-        </div>
-        <button class="btn-primary" @onclick="LoadReportData">Generate Report</button>
-    </div>
+        @if (!IsLoaded)
+        {
+            <div class="loading">Loading report data...</div>
+        }
+        else if (HasError)
+        {
+            <div class="error-message">
+                <h4>⚠️ Error</h4>
+                <p>@ErrorMessage</p>
+                <button class="btn-primary" @onclick="RetryLoad">Retry</button>
+            </div>
+        }
+        else
+        {
+            @* ===== SUMMARY CARDS ===== *@
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="summary-label">TOTAL CONSUMPTION</div>
+                    <div class="summary-value">@TotalConsumptionCount</div>
+                    <div class="summary-desc">Total items used</div>
+                </div>
 
-    @if (!IsLoaded)
-    {
-        <div class="loading">Loading report data...</div>
-    }
-    else if (HasError)
-    {
-        <div class="error-message">
-            <h4>⚠️ Error</h4>
-            <p>@ErrorMessage</p>
-            <button class="btn-primary" @onclick="RetryLoad">Retry</button>
-        </div>
-    }
-    else
-    {
-        @* ===== SUMMARY CARDS ===== *@
-        <div class="summary-cards">
-            <div class="summary-card">
-                <div class="summary-label">TOTAL CONSUMPTION</div>
-                <div class="summary-value">@TotalConsumptionCount items</div>
-                <div class="summary-desc">Total items used</div>
+                <div class="summary-card">
+                    <div class="summary-label">TOTAL COST</div>
+                    <div class="summary-value">₱@TotalConsumptionCost.ToString("N2")</div>
+                    <div class="summary-desc">Aggregate usage cost</div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="summary-label">SERVICES USED</div>
+                    <div class="summary-value">@UniqueServicesCount</div>
+                    <div class="summary-desc">Services with activity</div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="summary-label">ROOMS SERVED</div>
+                    <div class="summary-value">@UniqueRoomsCount</div>
+                    <div class="summary-desc">Room service requests</div>
+                </div>
             </div>
 
-            <div class="summary-card">
-                <div class="summary-label">TOTAL COST</div>
-                <div class="summary-value">₱@TotalConsumptionCost.ToString("N2")</div>
-                <div class="summary-desc">Aggregate usage cost</div>
+            @* ===== FILTERS ===== *@
+            <div class="report-filters">
+                <div class="filter-group">
+                    <label>From:</label>
+                    <input type="date" @bind="StartDate" @bind:format="yyyy-MM-dd" class="date-input" />
+                </div>
+                <div class="filter-group">
+                    <label>To:</label>
+                    <input type="date" @bind="EndDate" @bind:format="yyyy-MM-dd" class="date-input" />
+                </div>
+                <div class="filter-group">
+                    <label>Category:</label>
+                    <select @bind="FilterCategory" @bind:after="LoadReportData" class="filter-select">
+                        <option value="">All Categories</option>
+                        @foreach (var category in Categories)
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Search:</label>
+                    <input type="text" @bind="SearchText" @bind:event="oninput" @bind:after="OnSearchChanged" placeholder="Search items..." class="date-input" />
+                </div>
+                <button class="btn-primary" @onclick="LoadReportData">Generate Report</button>
             </div>
-
-            <div class="summary-card">
-                <div class="summary-label">SERVICES USED</div>
-                <div class="summary-value">@UniqueServicesCount</div>
-                <div class="summary-desc">Services with activity</div>
-            </div>
-
-            <div class="summary-card">
-                <div class="summary-label">ROOMS SERVED</div>
-                <div class="summary-value">@UniqueRoomsCount</div>
-                <div class="summary-desc">Room service requests</div>
-            </div>
-        </div>
 
         <div class="reports-grid">
             @* ===== TOP CONSUMED ITEMS ===== *@
@@ -326,6 +330,7 @@
     private DateTime StartDate = DateTime.Today.AddMonths(-1);
     private DateTime EndDate = DateTime.Today;
     private string FilterCategory = "";
+    private string SearchText = "";
     private bool IsLoaded = false;
     private bool HasError = false;
     private string ErrorMessage = string.Empty;
@@ -390,7 +395,7 @@
             UniqueRoomsCount = consumptions.Where(c => !string.IsNullOrEmpty(c.RoomNumber)).Select(c => c.RoomNumber).Distinct().Count();
 
             // Top consumed items
-            TopConsumedItems = consumptions
+            var topItemsList = consumptions
                 .Where(c => c.InventoryItem != null)
                 .GroupBy(c => c.InventoryItemId)
                 .Select(g => new ConsumedItemSummary
@@ -401,6 +406,19 @@
                     TotalQuantity = g.Sum(c => c.QuantityConsumed),
                     TotalCost = g.Sum(c => (g.First().InventoryItem?.UnitCost ?? 0) * c.QuantityConsumed)
                 })
+                .ToList();
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var searchLower = SearchText.ToLower();
+                topItemsList = topItemsList.Where(i => 
+                    i.ItemName.ToLower().Contains(searchLower) || 
+                    i.ItemCode.ToLower().Contains(searchLower))
+                    .ToList();
+            }
+
+            TopConsumedItems = topItemsList
                 .OrderByDescending(i => i.TotalQuantity)
                 .ToList();
 
@@ -431,17 +449,35 @@
                 .TakeLast(14)
                 .ToList();
 
-            // Consumption log
-            ConsumptionLog = consumptions
+            // Consumption log - apply search filter
+            var logList = consumptions.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var searchLower = SearchText.ToLower();
+                logList = logList.Where(c => 
+                    (c.InventoryItem != null && (c.InventoryItem.ItemName.ToLower().Contains(searchLower) ||
+                                                c.InventoryItem.ItemCode.ToLower().Contains(searchLower))) ||
+                    (!string.IsNullOrEmpty(c.RoomNumber) && c.RoomNumber.ToLower().Contains(searchLower)) ||
+                    (c.ServiceTransaction != null && c.ServiceTransaction.Service != null && 
+                     c.ServiceTransaction.Service.ServiceName.ToLower().Contains(searchLower)));
+            }
+            ConsumptionLog = logList
                 .OrderByDescending(c => c.ConsumptionDate)
                 .Take(100)
                 .ToList();
 
-            // Stock levels
+            // Stock levels - apply filters
             var stockQuery = DbContext.InventoryItems.Where(i => i.IsActive == true);
             if (!string.IsNullOrEmpty(FilterCategory))
             {
                 stockQuery = stockQuery.Where(i => i.Category == FilterCategory);
+            }
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var searchLower = SearchText.ToLower();
+                stockQuery = stockQuery.Where(i => 
+                    i.ItemName.ToLower().Contains(searchLower) || 
+                    i.ItemCode.ToLower().Contains(searchLower));
             }
             StockLevels = await stockQuery
                 .OrderBy(i => (i.CurrentStock ?? 0) - (i.ReorderPoint ?? 0))
@@ -473,6 +509,12 @@
 
     private async Task RetryLoad()
     {
+        await LoadReportData();
+    }
+
+    private async Task OnSearchChanged()
+    {
+        // Auto-refresh when search changes
         await LoadReportData();
     }
 
@@ -555,7 +597,7 @@
         font-weight: 600;
     }
 
-    /* Summary Cards (Premium Design) */
+    /* Summary Cards - Matching Suppliers Style */
     .summary-cards {
         display: grid;
         grid-template-columns: repeat(4, 1fr);

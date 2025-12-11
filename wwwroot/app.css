@@ -1026,12 +1026,14 @@ body {
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background-color: #0e5e6f;
+    color: white;
 }
 
 .btn-icon-action svg {
     width: 18px;
     height: 18px;
-    fill: currentColor;
+    fill: white;
 }
 
 .btn-icon-action:hover {
@@ -1041,21 +1043,66 @@ body {
 
 .btn-icon-action.edit {
     background-color: #0e5e6f;
-    /* Teal/dark greenish from image */
     color: white;
+}
+
+.btn-icon-action.edit svg {
+    fill: white;
 }
 
 .btn-icon-action.edit:hover {
     background-color: #0b4b59;
 }
 
-.btn-icon-action.archive {
-    background-color: #0e5e6f;
-    /* Same teal/dark greenish as requested "uniform" */
+.btn-icon-action.view {
+    background-color: #10b981;
     color: white;
 }
 
+.btn-icon-action.view svg {
+    fill: white;
+}
+
+.btn-icon-action.view:hover {
+    background-color: #059669;
+}
+
+.btn-icon-action.archive {
+    background-color: #0e5e6f;
+    color: white;
+}
+
+.btn-icon-action.archive svg {
+    fill: white;
+}
+
 .btn-icon-action.archive:hover {
+    background-color: #0b4b59;
+}
+
+.btn-icon-action.stock {
+    background-color: #10b981;
+    color: white;
+}
+
+.btn-icon-action.stock svg {
+    fill: white;
+}
+
+.btn-icon-action.stock:hover {
+    background-color: #059669;
+}
+
+.btn-icon-action.download {
+    background-color: #0e5e6f;
+    color: white;
+}
+
+.btn-icon-action.download svg {
+    fill: white;
+}
+
+.btn-icon-action.download:hover {
     background-color: #0b4b59;
 }
 

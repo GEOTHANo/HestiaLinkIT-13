@@ -94,5 +94,44 @@ window.chartHelper = {
                 }
             }
         });
+    },
+
+    renderLineChart: (canvasId, labels, data, label, borderColor, backgroundColor) => {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+
+        if (window.chartHelper.charts[canvasId]) {
+            window.chartHelper.charts[canvasId].destroy();
+        }
+
+        window.chartHelper.charts[canvasId] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: label,
+                    data: data,
+                    borderColor: borderColor,
+                    backgroundColor: backgroundColor,
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                }
+            }
+        });
     }
 };

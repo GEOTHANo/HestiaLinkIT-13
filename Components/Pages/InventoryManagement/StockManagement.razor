@@ -12,26 +12,26 @@
 
     <section class="page-content">
 
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
-        <div class="stat-card">
-            <div class="stat-title">Total Items</div>
-            <div class="stat-value">@InventoryItems.Count</div>
-            <div class="stat-desc">Total inventory count</div>
+    <div class="summary-cards">
+        <div class="summary-card">
+            <div class="summary-label">TOTAL ITEMS</div>
+            <div class="summary-value">@InventoryItems.Count</div>
+            <div class="summary-desc">Total inventory count</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-title">Low Stock Alerts</div>
-            <div class="stat-value" style="color: #b91c1c;">@InventoryItems.Count(i => i.Quantity < 20)</div>
-            <div class="stat-desc" style="color: #ef4444;">Items below threshold</div>
+        <div class="summary-card danger">
+            <div class="summary-label">LOW STOCK ALERTS</div>
+            <div class="summary-value">@InventoryItems.Count(i => i.Quantity < 20)</div>
+            <div class="summary-desc">Items below threshold</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-title">Categories</div>
-            <div class="stat-value">@InventoryItems.Select(i => i.Category).Distinct().Count()</div>
-            <div class="stat-desc">Active item categories</div>
+        <div class="summary-card">
+            <div class="summary-label">CATEGORIES</div>
+            <div class="summary-value">@InventoryItems.Select(i => i.Category).Distinct().Count()</div>
+            <div class="summary-desc">Active item categories</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-title">Total Value</div>
-            <div class="stat-value">?@InventoryItems.Sum(i => i.Quantity * i.UnitPrice).ToString("N0")</div>
-            <div class="stat-desc">Total inventory worth</div>
+        <div class="summary-card">
+            <div class="summary-label">TOTAL VALUE</div>
+            <div class="summary-value">₱@InventoryItems.Sum(i => i.Quantity * i.UnitPrice).ToString("N0")</div>
+            <div class="summary-desc">Total inventory worth</div>
         </div>
     </div>
 
@@ -73,7 +73,7 @@
                             <td style="font-weight: 700; color: #102f33;">@item.Name</td>
                             <td>@item.Category</td>
                             <td style="font-weight: 600;">@item.Quantity</td>
-                            <td>?@item.UnitPrice.ToString("N2")</td>
+                            <td>₱@item.UnitPrice.ToString("N2")</td>
                             <td>@item.Supplier</td>
                             <td>@item.Location</td>
                             <td>
@@ -134,7 +134,7 @@
                     <input type="number" class="form-input" @bind="CurrentItem.Quantity" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Unit Price (?)</label>
+                    <label class="form-label">Unit Price (₱)</label>
                     <input type="number" class="form-input" @bind="CurrentItem.UnitPrice" />
                 </div>
                 <div class="form-group">
@@ -161,39 +161,71 @@
 }
 
 <style>
-    /* Local style for stat cards to match inventory theme */
-    .stat-card {
-        background-color: #e0f2f1; /* Light Teal Background */
-        padding: 20px;
+    /* Summary Cards - Matching Purchase Orders Style */
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    .summary-card {
+        background: #e0f2f1; /* Light Cyan/Teal */
         border-radius: 16px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        padding: 24px;
+        border: none;
+        box-shadow: none;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        height: auto;
-        min-height: 120px;
+        height: 160px;
+        position: relative;
+        transition: transform 0.2s;
     }
 
-    .stat-title {
+    .summary-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .summary-card .summary-label {
+        color: #0e7490; /* Cyan-700 */
         font-size: 0.8rem;
-        font-weight: 700;
-        color: #004f59;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .stat-desc {
-        font-size: 0.75rem;
-        color: #64748b;
-        margin-top: 4px;
-        font-weight: 500;
-    }
-
-    .stat-value {
-        font-size: 2.2rem;
         font-weight: 800;
-        color: #102f33;
-        align-self: flex-end;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .summary-card .summary-value {
+        color: #0f172a; /* Slate-900 */
+        font-size: 3.5rem;
+        font-weight: 800;
+        line-height: 1;
+        text-align: right;
+        margin: 0;
+    }
+
+    .summary-card .summary-desc {
+        color: #64748b; /* Slate-500 */
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-top: auto;
+    }
+
+    /* Danger/Alert Variant */
+    .summary-card.danger {
+        background: #fee2e2; /* Red-100 */
+    }
+
+    .summary-card.danger .summary-label {
+        color: #b91c1c; /* Red-700 */
+    }
+
+    .summary-card.danger .summary-value {
+        color: #b91c1c; /* Red-700 */
+    }
+
+    .summary-card.danger .summary-desc {
+        color: #ef4444; /* Red-500 */
     }
 </style>
 

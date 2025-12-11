@@ -24,31 +24,26 @@
     </header>
 
     <section class="page-content">
-        <div class="top-cards" style="display:flex; gap:14px; margin-bottom:18px; align-items:center;">
-            <div class="stat-card" style="flex:1; padding:12px; border-radius:10px; background:white; box-shadow:0 2px 4px rgba(0,0,0,0.04); border:1px solid #e5e7eb;">
-                <div style="font-weight:600; color:#6b7280;">Occupied</div>
-                <div style="font-size:1.4rem; font-weight:700; color:#374151;">@Rooms.Count(r => r.Status == "Occupied")</div>
-                <div style="font-size:0.8rem; color:#94a3b8;">out of @Rooms.Count occupied</div>
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-label">OCCUPIED</div>
+                <div class="summary-value">@Rooms.Count(r => r.Status == "Occupied")</div>
+                <div class="summary-desc">out of @Rooms.Count occupied</div>
             </div>
-            <div class="stat-card" style="flex:1; padding:12px; border-radius:10px; background:white; box-shadow:0 2px 4px rgba(0,0,0,0.04); border:1px solid #e5e7eb;">
-                <div style="font-weight:600; color:#6b7280;">For Cleaning</div>
-                <div style="font-size:1.4rem; font-weight:700; color:#374151;">@Rooms.Count(r => r.Status == "For Cleaning")</div>
-                <div style="font-size:0.8rem; color:#94a3b8;">out of @Rooms.Count rooms</div>
+            <div class="summary-card">
+                <div class="summary-label">FOR CLEANING</div>
+                <div class="summary-value">@Rooms.Count(r => r.Status == "For Cleaning")</div>
+                <div class="summary-desc">out of @Rooms.Count rooms</div>
             </div>
-            <div class="stat-card" style="flex:1; padding:12px; border-radius:10px; background:white; box-shadow:0 2px 4px rgba(0,0,0,0.04); border:1px solid #e5e7eb;">
-                <div style="font-weight:600; color:#6b7280;">Under Maintenance</div>
-                <div style="font-size:1.4rem; font-weight:700; color:#374151;">@Rooms.Count(r => r.Status == "Maintenance")</div>
-                <div style="font-size:0.8rem; color:#94a3b8;">out of @Rooms.Count rooms</div>
+            <div class="summary-card">
+                <div class="summary-label">UNDER MAINTENANCE</div>
+                <div class="summary-value">@Rooms.Count(r => r.Status == "Maintenance")</div>
+                <div class="summary-desc">out of @Rooms.Count rooms</div>
             </div>
-            <div class="stat-card" style="flex:1; padding:12px; border-radius:10px; background:white; box-shadow:0 2px 4px rgba(0,0,0,0.04); border:1px solid #e5e7eb;">
-                <div style="font-weight:600; color:#6b7280;">Available</div>
-                <div style="font-size:1.4rem; font-weight:700; color:#374151;">@Rooms.Count(r => r.Status == "Available")</div>
-                <div style="font-size:0.8rem; color:#94a3b8;">ready for check-in</div>
-            </div>
-            <div class="stat-card" style="flex:1; padding:12px; border-radius:10px; background:white; box-shadow:0 2px 4px rgba(0,0,0,0.04); border:1px solid #e5e7eb;">
-                <div style="font-weight:600; color:#6b7280;">Occupancy Rate</div>
-                <div style="font-size:1.4rem; font-weight:700; color:#374151;">@GetOccupancyRate()%</div>
-                <div style="font-size:0.8rem; color:#94a3b8;">displaying currently</div>
+            <div class="summary-card">
+                <div class="summary-label">AVAILABLE</div>
+                <div class="summary-value">@Rooms.Count(r => r.Status == "Available")</div>
+                <div class="summary-desc">ready for check-in</div>
             </div>
         </div>
 
@@ -200,7 +195,34 @@
                                                 </div>
                                                 @foreach (var svc in categoryGroup)
                                                 {
-                                                    <label class="dropdown-item"><input type="checkbox" checked="@SelectedServiceIds.Contains(svc.ServiceId)" @onchange="(e) => ToggleServiceSelection(svc.ServiceId, (bool?)e.Value == true)" /> @svc.ServiceName <span style="margin-left:auto; color:#64748b; font-size:0.85rem;">₱@svc.StandardPrice.ToString("N2")</span></label>
+                                                    var requirements = GetServiceInventoryRequirementsSync(svc.ServiceId);
+                                                    var hasInsufficientInventory = requirements.Any(r => !r.HasSufficientStock);
+                                                    
+                                                    <label class="dropdown-item" style="@(hasInsufficientInventory ? "background-color: #fef3c7;" : "")">
+                                                        <input type="checkbox" 
+                                                               checked="@SelectedServiceIds.Contains(svc.ServiceId)" 
+                                                               @onchange="(e) => ToggleServiceSelection(svc.ServiceId, (bool?)e.Value == true)" 
+                                                               disabled="@hasInsufficientInventory" />
+                                                        
+                                                        <div style="display:flex; justify-content:space-between; width:100%;">
+                                                            <div>
+                                                                <span>@svc.ServiceName</span>
+                                                                @if (hasInsufficientInventory)
+                                                                {
+                                                                    <span style="margin-left: 8px; font-size: 0.7rem; color: #d97706;">(Low Stock)</span>
+                                                                }
+                                                            </div>
+                                                            <div style="display:flex; gap:8px; align-items:center;">
+                                                                @if (svc.UsesInventory == true || svc.ServiceCategoryId != null)
+                                                                {
+                                                                    <span style="font-size:0.7rem; background:#d1fae5; color:#065f46; padding:2px 6px; border-radius:4px;">
+                                                                        Inventory
+                                                                    </span>
+                                                                }
+                                                                <span style="color:#64748b; font-size:0.85rem;">₱@svc.StandardPrice.ToString("N2")</span>
+                                                            </div>
+                                                        </div>
+                                                    </label>
                                                 }
                                             }
                                         }
@@ -260,6 +282,48 @@
             <div class="action-footer" style="border:none; padding:16px; display:flex; gap:12px; justify-content:flex-end; border-top:1px solid #e5e7eb;">
                 <button class="btn-secondary" @onclick="CloseGuestModal">Cancel</button>
                 <button class="btn-primary" @onclick="SaveGuest">Check - IN</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Inventory Warning Modal -->
+@if (ShowInventoryWarning && InventoryWarnings.Any())
+{
+    <div class="modal-overlay" style="z-index: 9999;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header" style="background: #f59e0b;">
+                <h2 style="margin: 0; color: white;">⚠️ Inventory Alert</h2>
+                <div style="font-size: 0.9rem; color: #fef3c7;">Some services have insufficient inventory</div>
+            </div>
+            
+            <div style="padding: 20px; max-height: 400px; overflow-y: auto;">
+                <div style="margin-bottom: 15px; color: #7c2d12; background: #fef3c7; padding: 12px; border-radius: 8px;">
+                    <strong>Warning:</strong> The following inventory items are insufficient for selected services.
+                    You can proceed, but inventory will not be deducted.
+                </div>
+                
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                    @foreach (var warning in InventoryWarnings)
+                    {
+                        <div style="padding: 12px; border-bottom: 1px solid #f1f5f9; background: #fffbeb;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="color: #d97706;">⚠</span>
+                                <span>@warning</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+                
+                <div style="margin-top: 15px; font-size: 0.85rem; color: #6b7280;">
+                    <strong>Note:</strong> Services will still be charged to the guest, but inventory will not be deducted.
+                    Please restock these items.
+                </div>
+            </div>
+            
+            <div class="action-footer" style="border-top: 1px solid #e5e7eb; padding: 16px; display: flex; gap: 12px; justify-content: flex-end;">
+                <button class="btn-secondary" @onclick="() => { ShowInventoryWarning = false; InventoryWarnings.Clear(); }">Cancel Check-in</button>
+                <button class="btn-primary" @onclick="ProceedWithCheckInDespiteInventory">Proceed Anyway</button>
             </div>
         </div>
     </div>
@@ -330,7 +394,33 @@
                         </div>
                         @foreach (var svc in categoryGroup)
                         {
-                            <label style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #f1f5f9;"><input type="checkbox" checked="@AddServiceSelection.Contains(svc.ServiceId)" @onchange="(e) => ToggleAddServiceSelection(svc.ServiceId, (bool?)e.Value == true)" /> @svc.ServiceName <span style="margin-left:auto; color:#64748b; font-weight:600;">₱@svc.StandardPrice.ToString("N2")</span></label>
+                            var requirements = GetServiceInventoryRequirementsSync(svc.ServiceId);
+                            var hasInsufficientInventory = requirements.Any(r => !r.HasSufficientStock);
+                            
+                            <label style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #f1f5f9; @(hasInsufficientInventory ? "background-color: #fef3c7;" : "")">
+                                <input type="checkbox" 
+                                       checked="@AddServiceSelection.Contains(svc.ServiceId)" 
+                                       @onchange="(e) => ToggleAddServiceSelection(svc.ServiceId, (bool?)e.Value == true)" 
+                                       disabled="@hasInsufficientInventory" />
+                                <div style="display:flex; justify-content:space-between; width:100%;">
+                                    <div>
+                                        <span>@svc.ServiceName</span>
+                                        @if (hasInsufficientInventory)
+                                        {
+                                            <span style="margin-left: 8px; font-size: 0.7rem; color: #d97706;">(Low Stock)</span>
+                                        }
+                                    </div>
+                                    <div style="display:flex; gap:8px; align-items:center;">
+                                        @if (svc.UsesInventory == true || svc.ServiceCategoryId != null)
+                                        {
+                                            <span style="font-size:0.7rem; background:#d1fae5; color:#065f46; padding:2px 6px; border-radius:4px;">
+                                                Inventory
+                                            </span>
+                                        }
+                                        <span style="color:#64748b; font-weight:600;">₱@svc.StandardPrice.ToString("N2")</span>
+                                    </div>
+                                </div>
+                            </label>
                         }
                     }
                 }
@@ -375,6 +465,12 @@
 
     private IEnumerable<int> Floors => Rooms.Select(r => r.Floor).Distinct().OrderBy(f => f);
 
+    // Inventory management properties
+    private Dictionary<int, List<InventoryItem>> ServiceCategoryInventoryCache = new();
+    private bool ShowInventoryWarning = false;
+    private List<string> InventoryWarnings = new();
+    private List<int> ServicesWithInsufficientInventory = new();
+
     protected override async Task OnInitializedAsync()
     {
         await LoadRoomsFromView();
@@ -387,6 +483,9 @@
                 .OrderBy(s => s.ServiceCategory != null ? s.ServiceCategory.ServiceCategoryName : "ZZZ")
                 .ThenBy(s => s.ServiceName)
                 .ToListAsync();
+            
+            // Pre-load inventory for service categories
+            await LoadServiceCategoryInventory();
         }
         catch
         {
@@ -394,6 +493,27 @@
         }
 
         _isInitialized = true;
+    }
+
+    private async Task LoadServiceCategoryInventory()
+    {
+        try
+        {
+            // Get all inventory items that are connected to service categories
+            var categoryInventory = await DbContext.InventoryItems
+                .Where(i => i.IsServiceItem == true && i.IsActive == true && i.ServiceCategoryId != null)
+                .ToListAsync();
+            
+            // Group by ServiceCategoryId
+            ServiceCategoryInventoryCache = categoryInventory
+                .GroupBy(i => i.ServiceCategoryId.Value)
+                .ToDictionary(g => g.Key, g => g.ToList());
+        }
+        catch (Exception ex)
+        {
+            await SafeJsInvoke("console.error", $"Error loading service category inventory: {ex.Message}");
+            ServiceCategoryInventoryCache = new Dictionary<int, List<InventoryItem>>();
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -728,7 +848,7 @@
         }
     }
 
-    private void OpenGuestModal(RoomCard room)
+    private async void OpenGuestModal(RoomCard room)
     {
         SelectedRoom = room;
         GuestFirstName = ""; GuestLastName = ""; GuestEmail = ""; GuestContact = ""; GuestAddress = ""; GuestDOB = null;
@@ -737,6 +857,8 @@
         GuestPaymentStatus = "Pending";
         PaymentMethod = "Cash";
         SelectedServiceIds.Clear();
+        // Refresh inventory cache to get latest stock levels
+        await LoadServiceCategoryInventory();
         ShowGuestModal = true;
     }
 
@@ -754,6 +876,101 @@
     private void ToggleServiceSelection(int id, bool select)
     {
         if (select) SelectedServiceIds.Add(id); else SelectedServiceIds.Remove(id);
+    }
+
+    // Inventory requirement checking (async version for actual checks)
+    private async Task<List<InventoryRequirement>> CheckServiceInventoryRequirements(int serviceId)
+    {
+        var requirements = new List<InventoryRequirement>();
+        
+        var service = AvailableServices.FirstOrDefault(s => s.ServiceId == serviceId);
+        if (service == null || service.ServiceCategoryId == null)
+            return requirements;
+        
+        // Refresh inventory cache to get latest stock levels
+        await LoadServiceCategoryInventory();
+        
+        // Get inventory items for this service's category
+        if (ServiceCategoryInventoryCache.TryGetValue(service.ServiceCategoryId.Value, out var inventoryItems))
+        {
+            foreach (var item in inventoryItems)
+            {
+                int quantityToDeduct = DetermineQuantityToDeduct(item, service);
+                
+                requirements.Add(new InventoryRequirement
+                {
+                    InventoryItemId = item.ItemId,
+                    ItemName = item.ItemName,
+                    RequiredQuantity = quantityToDeduct,
+                    AvailableQuantity = item.CurrentStock ?? 0
+                });
+            }
+        }
+        
+        return requirements;
+    }
+
+    // Synchronous version for UI display (uses cached data)
+    private List<InventoryRequirement> GetServiceInventoryRequirementsSync(int serviceId)
+    {
+        var requirements = new List<InventoryRequirement>();
+        
+        var service = AvailableServices.FirstOrDefault(s => s.ServiceId == serviceId);
+        if (service == null || service.ServiceCategoryId == null)
+            return requirements;
+        
+        // Get inventory items for this service's category from cache
+        if (ServiceCategoryInventoryCache.TryGetValue(service.ServiceCategoryId.Value, out var inventoryItems))
+        {
+            foreach (var item in inventoryItems)
+            {
+                int quantityToDeduct = DetermineQuantityToDeduct(item, service);
+                
+                requirements.Add(new InventoryRequirement
+                {
+                    InventoryItemId = item.ItemId,
+                    ItemName = item.ItemName,
+                    RequiredQuantity = quantityToDeduct,
+                    AvailableQuantity = item.CurrentStock ?? 0
+                });
+            }
+        }
+        
+        return requirements;
+    }
+
+    private int DetermineQuantityToDeduct(InventoryItem item, Service service)
+    {
+        // CUSTOMIZE THESE RULES FOR YOUR BUSINESS
+        return service.ServiceCategory?.ServiceCategoryName?.ToUpper() switch
+        {
+            "AMENITIES" => item.Category.ToUpper() switch
+            {
+                "AMENITIES" => 1,  // 1 set of amenities per service
+                _ => 1
+            },
+            "SPA & WELLNESS" => item.Category.ToUpper() switch
+            {
+                "AMENITIES" => 2,  // Spa uses 2 towels, 2 robes, etc.
+                _ => 1
+            },
+            "HOUSEKEEPING" => item.Category.ToUpper() switch
+            {
+                "CLEANING" => 1,   // 1 cleaning item per service
+                "AMENITIES" => 1,  // Replace amenities during cleaning
+                _ => 1
+            },
+            _ => 1  // Default
+        };
+    }
+
+    public class InventoryRequirement
+    {
+        public int InventoryItemId { get; set; }
+        public string ItemName { get; set; } = string.Empty;
+        public int RequiredQuantity { get; set; }
+        public int AvailableQuantity { get; set; }
+        public bool HasSufficientStock => AvailableQuantity >= RequiredQuantity;
     }
 
     private string GetSelectedServicesLabel()
@@ -916,6 +1133,44 @@
             return;
         }
 
+        // BEFORE processing services, check inventory
+        InventoryWarnings.Clear();
+        ServicesWithInsufficientInventory.Clear();
+
+        foreach (var svcId in SelectedServiceIds)
+        {
+            var svc = AvailableServices.FirstOrDefault(s => s.ServiceId == svcId);
+            if (svc == null) continue;
+            
+            var requirements = await CheckServiceInventoryRequirements(svcId);
+            var insufficientItems = requirements.Where(r => !r.HasSufficientStock).ToList();
+            
+            if (insufficientItems.Any())
+            {
+                ServicesWithInsufficientInventory.Add(svcId);
+                
+                foreach (var item in insufficientItems)
+                {
+                    InventoryWarnings.Add(
+                        $"{svc.ServiceName}: {item.ItemName} (Need: {item.RequiredQuantity}, Have: {item.AvailableQuantity})"
+                    );
+                }
+            }
+        }
+
+        // If there are inventory warnings, show modal
+        if (InventoryWarnings.Any())
+        {
+            ShowInventoryWarning = true;
+            return; // Stop here, let user decide
+        }
+
+        // If no inventory issues, continue with check-in
+        await ProcessServicesAndInventory(roomEntity);
+    }
+
+    private async Task ProcessServicesAndInventory(Room roomEntity)
+    {
         try
         {
             // Clear entity tracking to prevent conflicts
@@ -988,6 +1243,7 @@
                     roomForUpdate.Status = "Occupied";
                     await DbContext.SaveChangesAsync();
 
+                    // Process services and deduct inventory based on service category
                     foreach (var svcId in SelectedServiceIds)
                     {
                         var svc = AvailableServices.FirstOrDefault(s => s.ServiceId == svcId);
@@ -1006,17 +1262,8 @@
                         DbContext.ServiceTransactions.Add(serviceTransaction);
                         await DbContext.SaveChangesAsync(); // Save to get the ID
 
-                        // Automatically consume inventory if service has inventory links
-                        // Check if service has any inventory links (even if UsesInventory flag is not set)
-                        var hasLinks = await DbContext.ServiceInventories
-                            .AnyAsync(si => si.ServiceId == svc.ServiceId);
-                        
-                        if (hasLinks || svc.UsesInventory == true)
-                        {
-                            await InventoryService.ConsumeInventoryForServiceAsync(
-                                serviceTransaction.ServiceTransactionId, 
-                                roomForUpdate.RoomNumber);
-                        }
+                        // NEW: DEDUCT INVENTORY BASED ON SERVICE CATEGORY
+                        await DeductInventoryForService(svc, roomForUpdate.RoomNumber, serviceTransaction.ServiceTransactionId);
                     }
 
                     var bill = new Bill
@@ -1125,6 +1372,96 @@
 
             await SafeJsInvoke("alert", $"Error during check-in: {ex.InnerException?.Message ?? ex.Message}");
         }
+    }
+
+    private async Task<bool> DeductInventoryForService(Service service, string roomNumber, int serviceTransactionId)
+    {
+        try
+        {
+            if (service.ServiceCategoryId == null)
+                return true; // No category, nothing to deduct
+            
+            // Get inventory items for this service category
+            var inventoryItems = await DbContext.InventoryItems
+                .Where(i => i.ServiceCategoryId == service.ServiceCategoryId 
+                         && i.IsServiceItem == true 
+                         && i.IsActive == true)
+                .ToListAsync();
+            
+            if (!inventoryItems.Any())
+                return true; // No inventory for this category
+            
+            foreach (var item in inventoryItems)
+            {
+                int quantityToDeduct = DetermineQuantityToDeduct(item, service);
+                
+                // Skip if insufficient stock (user chose to proceed anyway)
+                if ((item.CurrentStock ?? 0) < quantityToDeduct)
+                    continue;
+                
+                // Create consumption record
+                var consumption = new InventoryConsumption
+                {
+                    ServiceTransactionId = serviceTransactionId,
+                    InventoryItemId = item.ItemId,
+                    QuantityConsumed = quantityToDeduct,
+                    ConsumptionDate = DateTime.Now,
+                    RoomNumber = roomNumber
+                };
+                
+                DbContext.InventoryConsumptions.Add(consumption);
+                
+                // Update stock
+                item.CurrentStock = (item.CurrentStock ?? 0) - quantityToDeduct;
+                
+                // Log low stock
+                if (item.CurrentStock <= item.ReorderPoint)
+                {
+                    await SafeJsInvoke("console.warn", 
+                        $"Low stock: {item.ItemName} is now at {item.CurrentStock}");
+                }
+            }
+            
+            await DbContext.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await SafeJsInvoke("console.error", $"Error deducting inventory: {ex.Message}");
+            return false;
+        }
+    }
+
+    private async Task ProceedWithCheckInDespiteInventory()
+    {
+        ShowInventoryWarning = false;
+        
+        if (SelectedRoom == null)
+        {
+            await SafeJsInvoke("alert", "No room selected");
+            return;
+        }
+
+        var roomEntity = await DbContext.Rooms
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.RoomNumber == SelectedRoom.RoomNumber);
+
+        if (roomEntity == null)
+        {
+            await SafeJsInvoke("alert", "Selected room not found in database");
+            return;
+        }
+
+        // Continue with check-in but skip inventory deduction for insufficient items
+        await ProcessServicesAndInventory(roomEntity);
+        
+        // Show success message
+        await SafeJsInvoke("alert", 
+            "Check-in completed! Note: Some inventory items were not deducted due to insufficient stock.");
+        
+        // Close modal and refresh
+        ShowGuestModal = false;
+        await LoadRoomsFromView();
     }
 
     private void OpenCheckOutModal(RoomCard room)
@@ -1382,17 +1719,8 @@
                 DbContext.ServiceTransactions.Add(serviceTransaction);
                 await DbContext.SaveChangesAsync(); // Save to get the ID
 
-                // Automatically consume inventory if service has inventory links
-                // Check if service has any inventory links (even if UsesInventory flag is not set)
-                var hasLinks = await DbContext.ServiceInventories
-                    .AnyAsync(si => si.ServiceId == svc.ServiceId);
-                
-                if (hasLinks || svc.UsesInventory == true)
-                {
-                    await InventoryService.ConsumeInventoryForServiceAsync(
-                        serviceTransaction.ServiceTransactionId, 
-                        SelectedRoom?.RoomNumber);
-                }
+                // NEW: DEDUCT INVENTORY BASED ON SERVICE CATEGORY
+                await DeductInventoryForService(svc, SelectedRoom?.RoomNumber ?? "", serviceTransaction.ServiceTransactionId);
             }
 
             var addedAmount = AvailableServices.Where(s => AddServiceSelection.Contains(s.ServiceId)).Sum(s => s.StandardPrice);
@@ -1423,3 +1751,55 @@
         public decimal TotalDue { get; set; }
     }
 }
+
+<style>
+    /* Summary Cards - Matching Suppliers Style */
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    .summary-card {
+        background: #e0f2f1; /* Light Cyan/Teal */
+        border-radius: 16px;
+        padding: 24px;
+        border: none;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 160px;
+        position: relative;
+        transition: transform 0.2s;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .summary-card .summary-label {
+        color: #0e7490; /* Cyan-700 */
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .summary-card .summary-value {
+        color: #0f172a; /* Slate-900 */
+        font-size: 3.5rem;
+        font-weight: 800;
+        line-height: 1;
+        text-align: right;
+        margin: 0;
+    }
+
+    .summary-card .summary-desc {
+        color: #64748b; /* Slate-500 */
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-top: auto;
+    }
+</style>

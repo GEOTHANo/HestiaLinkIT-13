@@ -1,8 +1,10 @@
 @page "/inventory/dashboard"
 @using Microsoft.EntityFrameworkCore
 @using System.Globalization
+@using HestiaLink.Services
 @inject IJSRuntime JSRuntime
 @inject HestiaLinkContext DbContext
+@inject HousekeepingService HousekeepingService
 @layout MainLayout
 
 <div class="page-wrapper">
@@ -46,6 +48,66 @@
                 <div class="summary-value">₱@TotalStockValue.ToString("N0")</div>
                 <div class="summary-desc">Total inventory worth</div>
             </div>
+
+            <div class="summary-card">
+                <div class="summary-label">SERVICE ITEMS</div>
+                <div class="summary-value">@ServiceItemsCount</div>
+                <div class="summary-desc">Items used by services</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-label">TODAY'S USAGE</div>
+                <div class="summary-value">@TodaysConsumption</div>
+                <div class="summary-desc">Items consumed today</div>
+            </div>
+        </div>
+
+        <!-- Employee Cards -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-label">TOTAL EMPLOYEES</div>
+                <div class="summary-value">@TotalEmployees</div>
+                <div class="summary-desc">Active staff members</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">PRESENT</div>
+                <div class="summary-value" style="color:#10b981;">@PresentEmployees</div>
+                <div class="summary-desc">Employees present today</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">LATE</div>
+                <div class="summary-value" style="color:#f97316;">@LateEmployees</div>
+                <div class="summary-desc">Employees late today</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">ABSENT</div>
+                <div class="summary-value" style="color:#ef4444;">@AbsentEmployees</div>
+                <div class="summary-desc">Employees absent today</div>
+            </div>
+        </div>
+
+        <!-- Cleaning Schedule Cards -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-label">NEEDS CLEANING</div>
+                <div class="summary-value">@RoomsForCleaning</div>
+                <div class="summary-desc">Rooms requiring cleaning</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">ACTIVE TASKS</div>
+                <div class="summary-value">@ActiveCleaningTasks</div>
+                <div class="summary-desc">Currently in progress</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">AVAILABLE STAFF</div>
+                <div class="summary-value">@AvailableHousekeepers</div>
+                <div class="summary-desc">Housekeepers available</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">MAINTENANCE</div>
+                <div class="summary-value">@MaintenanceRooms</div>
+                <div class="summary-desc">Rooms under maintenance</div>
+            </div>
         </div>
 
         @* ===== QUICK ACTION BUTTONS ===== *@
@@ -53,10 +115,6 @@
             <a href="/inventory/items" class="action-btn">
                 <span class="action-icon">📦</span>
                 <span>Manage Items</span>
-            </a>
-            <a href="/inventory/service-links" class="action-btn">
-                <span class="action-icon">🔗</span>
-                <span>Service Links</span>
             </a>
             <a href="/inventory/reports" class="action-btn">
                 <span class="action-icon">📊</span>
@@ -191,7 +249,6 @@
             <div class="panel-card">
                 <div class="panel-header">
                     <h3>🔗 Services Using Inventory</h3>
-                    <a href="/inventory/service-links" class="view-all-link">Manage Links</a>
                 </div>
                 <div class="panel-body">
                     @if (ServicesWithInventory.Any())
@@ -237,6 +294,20 @@
     private int LowStockCount = 0;
     private int CategoryCount = 0;
     private decimal TotalStockValue = 0;
+    private int ServiceItemsCount = 0;
+    private int TodaysConsumption = 0;
+
+    // Employee data
+    private int TotalEmployees = 0;
+    private int PresentEmployees = 0;
+    private int LateEmployees = 0;
+    private int AbsentEmployees = 0;
+
+    // Cleaning schedule data
+    private int RoomsForCleaning = 0;
+    private int ActiveCleaningTasks = 0;
+    private int AvailableHousekeepers = 0;
+    private int MaintenanceRooms = 0;
 
     // Lists
     private List<InventoryItem> LowStockItems = new();
@@ -262,6 +333,7 @@
             TotalItems = inventoryItems.Count;
             TotalStockValue = inventoryItems.Sum(i => (i.CurrentStock ?? 0) * i.UnitCost);
             CategoryCount = inventoryItems.Select(i => i.Category).Distinct().Count();
+            ServiceItemsCount = inventoryItems.Count(i => i.IsServiceItem == true);
 
             // Low stock items (at or below reorder point) with null-safe comparison
             LowStockItems = inventoryItems
@@ -269,6 +341,18 @@
                 .OrderBy(i => i.CurrentStock ?? 0)
                 .ToList();
             LowStockCount = LowStockItems.Count;
+
+            // Today's consumption count
+            var today = DateTime.Today;
+            TodaysConsumption = await DbContext.InventoryConsumptions
+                .Where(c => c.ConsumptionDate.Date == today)
+                .CountAsync();
+
+            // Load employee data
+            await LoadEmployeeData();
+
+            // Load cleaning schedule data
+            await LoadCleaningData();
 
             // Category breakdown with null-safe calculations
             CategoryBreakdown = inventoryItems
@@ -317,6 +401,69 @@
         }
     }
 
+    private async Task LoadEmployeeData()
+    {
+        try
+        {
+            var todayDate = DateOnly.FromDateTime(DateTime.Today);
+            
+            // Total active employees
+            TotalEmployees = await DbContext.Employees.CountAsync(e => e.Status == "Active");
+
+            // Get today's schedules
+            var todaySchedules = await DbContext.Schedules
+                .Where(s => s.ScheduleDate == todayDate && s.IsActive == true)
+                .ToListAsync();
+
+            var scheduleIds = todaySchedules.Select(s => s.ScheduleId).ToList();
+
+            // Get today's attendances
+            var todayAttendances = await DbContext.Attendances
+                .Include(a => a.Schedule)
+                .Where(a => a.AttendanceDate == todayDate && scheduleIds.Contains(a.ScheduleId))
+                .ToListAsync();
+
+            PresentEmployees = todayAttendances.Count(a => a.AttendanceStatus == "Present");
+            AbsentEmployees = todayAttendances.Count(a => a.AttendanceStatus == "Absent");
+            
+            // Calculate late count (check-in time > scheduled start + 15 minutes)
+            LateEmployees = todayAttendances.Count(a =>
+                a.ActualCheckIn.HasValue &&
+                a.Schedule != null &&
+                a.ActualCheckIn.Value.TimeOfDay > a.Schedule.ScheduledStart.ToTimeSpan().Add(TimeSpan.FromMinutes(15)));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading employee data: {ex.Message}");
+        }
+    }
+
+    private async Task LoadCleaningData()
+    {
+        try
+        {
+            // Get rooms for cleaning
+            var roomsForCleaningList = await HousekeepingService.GetRoomsForCleaningAsync();
+            RoomsForCleaning = roomsForCleaningList.Count;
+
+            // Get active tasks
+            var activeTasksList = await HousekeepingService.GetActiveTasksAsync();
+            ActiveCleaningTasks = activeTasksList.Count;
+
+            // Get available housekeepers
+            var availableHousekeepersList = await HousekeepingService.GetAvailableHousekeepersAsync();
+            AvailableHousekeepers = availableHousekeepersList.Count;
+
+            // Get rooms under maintenance
+            var maintenanceRoomsList = await HousekeepingService.GetRoomsUnderMaintenanceAsync();
+            MaintenanceRooms = maintenanceRoomsList.Count;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading cleaning data: {ex.Message}");
+        }
+    }
+
 
     // Helper classes
     private class CategorySummary
@@ -339,7 +486,7 @@
     /* Summary Cards (Premium Design) */
     .summary-cards {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 24px;
         margin-bottom: 32px;
     }

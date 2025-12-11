@@ -36,23 +36,27 @@
         }
         else
         {
-            <!-- Stats Summary - Same style as CheckInCheckOut -->
-            <div class="top-cards" style="display:flex; gap:14px; margin-bottom:18px; align-items:center; flex-wrap:wrap;">
-                <div class="stat-card" style="flex:1; min-width:140px; padding:12px; border-radius:10px; background:white; box-shadow:0 2px 4px rgba(0,0,0,0.04); border:1px solid #e5e7eb;">
-                    <div style="font-weight:600; color:#6b7280;">🧹 Needs Cleaning</div>
-                    <div style="font-size:1.4rem; font-weight:700; color:#374151;">@RoomsForCleaning.Count</div>
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="summary-label">NEEDS CLEANING</div>
+                    <div class="summary-value">@RoomsForCleaning.Count</div>
+                    <div class="summary-desc">Rooms requiring cleaning</div>
                 </div>
-                <div class="stat-card" style="flex:1; min-width:140px; padding:12px; border-radius:10px; background:white; box-shadow:0 2px 4px rgba(0,0,0,0.04); border:1px solid #e5e7eb;">
-                    <div style="font-weight:600; color:#6b7280;">📋 Active Tasks</div>
-                    <div style="font-size:1.4rem; font-weight:700; color:#374151;">@ActiveTasks.Count</div>
+                <div class="summary-card">
+                    <div class="summary-label">ACTIVE TASKS</div>
+                    <div class="summary-value">@ActiveTasks.Count</div>
+                    <div class="summary-desc">Currently in progress</div>
                 </div>
-                <div class="stat-card" style="flex:1; min-width:140px; padding:12px; border-radius:10px; background:white; box-shadow:0 2px 4px rgba(0,0,0,0.04); border:1px solid #e5e7eb;">
-                    <div style="font-weight:600; color:#6b7280;">👤 Available Staff</div>
-                    <div style="font-size:1.4rem; font-weight:700; color:#374151;">@AvailableHousekeepers.Count</div>
+                <div class="summary-card">
+                    <div class="summary-label">AVAILABLE STAFF</div>
+                    <div class="summary-value">@AvailableHousekeepers.Count</div>
+                    <div class="summary-desc">Housekeepers available</div>
                 </div>
-                <div class="stat-card" style="flex:1; min-width:140px; padding:12px; border-radius:10px; background:white; box-shadow:0 2px 4px rgba(0,0,0,0.04); border:1px solid #e5e7eb;">
-                    <div style="font-weight:600; color:#6b7280;">🔧 Maintenance</div>
-                    <div style="font-size:1.4rem; font-weight:700; color:#374151;">@RoomsUnderMaintenance.Count</div>
+                <div class="summary-card">
+                    <div class="summary-label">MAINTENANCE</div>
+                    <div class="summary-value">@RoomsUnderMaintenance.Count</div>
+                    <div class="summary-desc">Rooms under maintenance</div>
                 </div>
             </div>
 
@@ -268,6 +272,56 @@
 }
 
 <style>
+    /* Summary Cards - Matching Suppliers Style */
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    .summary-card {
+        background: #e0f2f1; /* Light Cyan/Teal */
+        border-radius: 16px;
+        padding: 24px;
+        border: none;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 160px;
+        position: relative;
+        transition: transform 0.2s;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .summary-card .summary-label {
+        color: #0e7490; /* Cyan-700 */
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .summary-card .summary-value {
+        color: #0f172a; /* Slate-900 */
+        font-size: 3.5rem;
+        font-weight: 800;
+        line-height: 1;
+        text-align: right;
+        margin: 0;
+    }
+
+    .summary-card .summary-desc {
+        color: #64748b; /* Slate-500 */
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-top: auto;
+    }
+
     /* Cards Grid - Same as CheckInCheckOut */
     .cards-grid {
         display: grid;

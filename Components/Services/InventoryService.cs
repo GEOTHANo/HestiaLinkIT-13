@@ -87,6 +87,8 @@ namespace HestiaLink.Services
             existing.CurrentStock = item.CurrentStock;
             existing.ReorderPoint = item.ReorderPoint;
             existing.SupplierID = item.SupplierID;
+            existing.ServiceCategoryId = item.ServiceCategoryId;
+            existing.IsServiceItem = item.IsServiceItem;
 
             await _context.SaveChangesAsync();
             return true;
@@ -815,6 +817,281 @@ namespace HestiaLink.Services
         }
 
         #endregion
+
+        #region Additional Required Methods
+
+        /// <summary>
+        /// Checks if there is sufficient stock available for an item.
+        /// </summary>
+        public async Task<bool> CheckStockAvailabilityAsync(int itemId, decimal quantity)
+        {
+            return await HasSufficientStockAsync(itemId, quantity);
+        }
+
+        /// <summary>
+        /// Deducts stock for a service transaction with room number tracking.
+        /// </summary>
+        public async Task<bool> DeductStockAsync(int itemId, decimal quantity, string? roomNumber, int? serviceTransactionId)
+        {
+            var item = await _context.InventoryItems.FirstOrDefaultAsync(i => i.ItemId == itemId);
+            if (item == null || (item.CurrentStock ?? 0) < quantity)
+                return false;
+
+            // Deduct stock
+            item.CurrentStock = (int)Math.Max(0, (item.CurrentStock ?? 0) - quantity);
+
+            // Create consumption record if service transaction is provided
+            if (serviceTransactionId.HasValue)
+            {
+                var consumption = new InventoryConsumption
+                {
+                    ServiceTransactionId = serviceTransactionId.Value,
+                    InventoryItemId = itemId,
+                    QuantityConsumed = quantity,
+                    ConsumptionDate = DateTime.Now,
+                    RoomNumber = roomNumber
+                };
+                _context.InventoryConsumptions.Add(consumption);
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        /// <summary>
+        /// Adds stock to an item (typically from purchase order).
+        /// </summary>
+        public async Task<bool> AddStockAsync(int itemId, int quantity, int? purchaseId = null)
+        {
+            var item = await _context.InventoryItems.FirstOrDefaultAsync(i => i.ItemId == itemId);
+            if (item == null) return false;
+
+            item.CurrentStock = (item.CurrentStock ?? 0) + quantity;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        /// <summary>
+        /// Gets inventory requirements for a service based on service category.
+        /// </summary>
+        public async Task<List<ServiceInventoryRequirement>> GetServiceInventoryRequirementsAsync(int serviceId)
+        {
+            var requirements = new List<ServiceInventoryRequirement>();
+            
+            var service = await _context.Services
+                .Include(s => s.ServiceCategory)
+                .FirstOrDefaultAsync(s => s.ServiceId == serviceId);
+            
+            if (service == null || service.ServiceCategoryId == null)
+                return requirements;
+
+            // Get inventory items for this service's category
+            var inventoryItems = await _context.InventoryItems
+                .Where(i => i.ServiceCategoryId == service.ServiceCategoryId 
+                         && i.IsServiceItem == true 
+                         && i.IsActive == true)
+                .ToListAsync();
+
+            foreach (var item in inventoryItems)
+            {
+                int quantityToDeduct = DetermineQuantityToDeduct(item, service);
+                
+                requirements.Add(new ServiceInventoryRequirement
+                {
+                    InventoryItemId = item.ItemId,
+                    ItemName = item.ItemName,
+                    ItemCode = item.ItemCode,
+                    RequiredQuantity = quantityToDeduct,
+                    AvailableQuantity = item.CurrentStock ?? 0,
+                    UnitOfMeasure = item.UnitOfMeasure
+                });
+            }
+
+            return requirements;
+        }
+
+        /// <summary>
+        /// Checks if stock is available for a service.
+        /// </summary>
+        public async Task<bool> CheckStockForServiceAsync(int serviceId)
+        {
+            var requirements = await GetServiceInventoryRequirementsAsync(serviceId);
+            return requirements.All(r => r.AvailableQuantity >= r.RequiredQuantity);
+        }
+
+        /// <summary>
+        /// Deducts stock for a service based on service category.
+        /// </summary>
+        public async Task<bool> DeductStockForServiceAsync(int serviceId, string? roomNumber, int serviceTransactionId)
+        {
+            var service = await _context.Services
+                .Include(s => s.ServiceCategory)
+                .FirstOrDefaultAsync(s => s.ServiceId == serviceId);
+            
+            if (service == null || service.ServiceCategoryId == null)
+                return true; // No category, nothing to deduct
+
+            // Get inventory items for this service category
+            var inventoryItems = await _context.InventoryItems
+                .Where(i => i.ServiceCategoryId == service.ServiceCategoryId 
+                         && i.IsServiceItem == true 
+                         && i.IsActive == true)
+                .ToListAsync();
+
+            if (!inventoryItems.Any())
+                return true; // No inventory for this category
+
+            foreach (var item in inventoryItems)
+            {
+                int quantityToDeduct = DetermineQuantityToDeduct(item, service);
+                
+                // Skip if insufficient stock
+                if ((item.CurrentStock ?? 0) < quantityToDeduct)
+                    continue;
+
+                // Create consumption record
+                var consumption = new InventoryConsumption
+                {
+                    ServiceTransactionId = serviceTransactionId,
+                    InventoryItemId = item.ItemId,
+                    QuantityConsumed = quantityToDeduct,
+                    ConsumptionDate = DateTime.Now,
+                    RoomNumber = roomNumber
+                };
+                
+                _context.InventoryConsumptions.Add(consumption);
+                
+                // Update stock
+                item.CurrentStock = (item.CurrentStock ?? 0) - quantityToDeduct;
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        /// <summary>
+        /// Determines quantity to deduct based on service category and item category.
+        /// </summary>
+        private int DetermineQuantityToDeduct(InventoryItem item, HestiaLink.Models.Service service)
+        {
+            // CUSTOMIZE THESE RULES FOR YOUR BUSINESS
+            return service.ServiceCategory?.ServiceCategoryName?.ToUpper() switch
+            {
+                "AMENITIES" => item.Category.ToUpper() switch
+                {
+                    "AMENITIES" => 1,  // 1 set of amenities per service
+                    _ => 1
+                },
+                "SPA & WELLNESS" => item.Category.ToUpper() switch
+                {
+                    "AMENITIES" => 2,  // Spa uses 2 towels, 2 robes, etc.
+                    _ => 1
+                },
+                "HOUSEKEEPING" => item.Category.ToUpper() switch
+                {
+                    "CLEANING" => 1,   // 1 cleaning item per service
+                    "AMENITIES" => 1,  // Replace amenities during cleaning
+                    _ => 1
+                },
+                _ => 1  // Default
+            };
+        }
+
+        /// <summary>
+        /// Updates service-inventory item mapping.
+        /// </summary>
+        public async Task<bool> UpdateServiceItemMappingAsync(int serviceId, int itemId, decimal quantity)
+        {
+            var existing = await _context.ServiceInventories
+                .FirstOrDefaultAsync(si => si.ServiceId == serviceId && si.InventoryItemId == itemId);
+            
+            if (existing == null)
+            {
+                // Create new link
+                await CreateServiceInventoryLinkAsync(serviceId, itemId, quantity);
+                return true;
+            }
+            else
+            {
+                // Update existing link
+                existing.QuantityRequired = quantity;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Gets consumption report as a summary.
+        /// </summary>
+        public async Task<ConsumptionReportSummary> GetConsumptionReportSummaryAsync(DateTime startDate, DateTime endDate)
+        {
+            var consumptions = await GetConsumptionReportAsync(startDate, endDate);
+            var totalCost = await GetTotalConsumptionCostAsync(startDate, endDate);
+
+            return new ConsumptionReportSummary
+            {
+                TotalConsumptions = consumptions.Count,
+                TotalQuantity = consumptions.Sum(c => c.QuantityConsumed),
+                TotalCost = totalCost,
+                UniqueItems = consumptions.Select(c => c.InventoryItemId).Distinct().Count(),
+                UniqueServices = consumptions
+                    .Where(c => c.ServiceTransaction != null && c.ServiceTransaction.Service != null)
+                    .Select(c => c.ServiceTransaction!.Service!.ServiceId)
+                    .Distinct()
+                    .Count(),
+                UniqueRooms = consumptions
+                    .Where(c => !string.IsNullOrEmpty(c.RoomNumber))
+                    .Select(c => c.RoomNumber!)
+                    .Distinct()
+                    .Count()
+            };
+        }
+
+        /// <summary>
+        /// Gets service items count (items marked as IsServiceItem).
+        /// </summary>
+        public async Task<int> GetServiceItemsCountAsync()
+        {
+            return await _context.InventoryItems
+                .CountAsync(i => i.IsServiceItem == true && i.IsActive == true);
+        }
+
+        /// <summary>
+        /// Gets today's consumption count.
+        /// </summary>
+        public async Task<int> GetTodaysConsumptionCountAsync()
+        {
+            var today = DateTime.Today;
+            return await _context.InventoryConsumptions
+                .Where(c => c.ConsumptionDate.Date == today)
+                .CountAsync();
+        }
+
+        /// <summary>
+        /// Gets recent consumptions for dashboard.
+        /// </summary>
+        public async Task<List<RecentConsumption>> GetRecentConsumptionsAsync(int count = 10)
+        {
+            return await _context.InventoryConsumptions
+                .Include(c => c.InventoryItem)
+                .Include(c => c.ServiceTransaction)
+                    .ThenInclude(st => st!.Service)
+                .OrderByDescending(c => c.ConsumptionDate)
+                .Take(count)
+                .Select(c => new RecentConsumption
+                {
+                    ItemName = c.InventoryItem != null ? c.InventoryItem.ItemName : "Unknown",
+                    QuantityConsumed = c.QuantityConsumed,
+                    RoomNumber = c.RoomNumber ?? "N/A",
+                    ConsumptionDate = c.ConsumptionDate,
+                    ServiceName = c.ServiceTransaction != null && c.ServiceTransaction.Service != null 
+                        ? c.ServiceTransaction.Service.ServiceName 
+                        : "N/A"
+                })
+                .ToListAsync();
+        }
+
+        #endregion
     }
 
     #region Supporting Types
@@ -844,6 +1121,36 @@ namespace HestiaLink.Services
         public string ItemCode { get; set; } = string.Empty;
         public decimal TotalQuantity { get; set; }
         public decimal TotalCost { get; set; }
+    }
+
+    public class ServiceInventoryRequirement
+    {
+        public int InventoryItemId { get; set; }
+        public string ItemName { get; set; } = string.Empty;
+        public string ItemCode { get; set; } = string.Empty;
+        public int RequiredQuantity { get; set; }
+        public int AvailableQuantity { get; set; }
+        public string UnitOfMeasure { get; set; } = string.Empty;
+        public bool HasSufficientStock => AvailableQuantity >= RequiredQuantity;
+    }
+
+    public class ConsumptionReportSummary
+    {
+        public int TotalConsumptions { get; set; }
+        public decimal TotalQuantity { get; set; }
+        public decimal TotalCost { get; set; }
+        public int UniqueItems { get; set; }
+        public int UniqueServices { get; set; }
+        public int UniqueRooms { get; set; }
+    }
+
+    public class RecentConsumption
+    {
+        public string ItemName { get; set; } = string.Empty;
+        public decimal QuantityConsumed { get; set; }
+        public string RoomNumber { get; set; } = string.Empty;
+        public DateTime ConsumptionDate { get; set; }
+        public string ServiceName { get; set; } = string.Empty;
     }
 
     #endregion

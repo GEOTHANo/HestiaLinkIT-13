@@ -7,6 +7,7 @@
 @inject NavigationManager Navigation
 @inject UserSession UserSession
 @inject IJSRuntime JSRuntime
+@inject HousekeepingService HousekeepingService
 @layout MainLayout
 
 <div class="page-wrapper">
@@ -34,26 +35,145 @@
         }
         else
         {
-            <div class="top-cards" style="display:flex; gap:14px; margin-bottom:18px; align-items:center; flex-wrap:wrap;">
-                <div class="stat-card" style="flex:1; min-width:160px; padding:16px; border-radius:12px; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid #e5e7eb; border-left:4px solid #10b981;">
-                    <div style="font-weight:600; color:#6b7280; font-size:0.85rem;">🏨 Available Rooms</div>
-                    <div style="font-size:1.8rem; font-weight:800; color:#10b981; margin-top:4px;">@AvailableRooms</div>
-                    <div style="font-size:0.75rem; color:#9ca3af; margin-top:2px;">of @TotalRooms total</div>
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="summary-label">AVAILABLE ROOMS</div>
+                    <div class="summary-value">@AvailableRooms</div>
+                    <div class="summary-desc">of @TotalRooms total</div>
                 </div>
-                <div class="stat-card" style="flex:1; min-width:160px; padding:16px; border-radius:12px; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid #e5e7eb; border-left:4px solid #3b82f6;">
-                    <div style="font-weight:600; color:#6b7280; font-size:0.85rem;">👥 Active Guests</div>
-                    <div style="font-size:1.8rem; font-weight:800; color:#3b82f6; margin-top:4px;">@ActiveGuests</div>
-                    <div style="font-size:0.75rem; color:#9ca3af; margin-top:2px;">checked in now</div>
+                <div class="summary-card">
+                    <div class="summary-label">ACTIVE GUESTS</div>
+                    <div class="summary-value">@ActiveGuests</div>
+                    <div class="summary-desc">checked in now</div>
                 </div>
-                <div class="stat-card" style="flex:1; min-width:160px; padding:16px; border-radius:12px; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid #e5e7eb; border-left:4px solid #f59e0b;">
-                    <div style="font-weight:600; color:#6b7280; font-size:0.85rem;">🧹 Pending Tasks</div>
-                    <div style="font-size:1.8rem; font-weight:800; color:#f59e0b; margin-top:4px;">@PendingHousekeepingTasks</div>
-                    <div style="font-size:0.75rem; color:#9ca3af; margin-top:2px;">housekeeping</div>
+                <div class="summary-card">
+                    <div class="summary-label">PENDING TASKS</div>
+                    <div class="summary-value">@PendingHousekeepingTasks</div>
+                    <div class="summary-desc">housekeeping</div>
                 </div>
-                <div class="stat-card" style="flex:1; min-width:160px; padding:16px; border-radius:12px; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid #e5e7eb; border-left:4px solid #ef4444;">
-                    <div style="font-weight:600; color:#6b7280; font-size:0.85rem;">💰 Outstanding Balance</div>
-                    <div style="font-size:1.8rem; font-weight:800; color:#ef4444; margin-top:4px;">₱@TotalOutstanding.ToString("N2")</div>
-                    <div style="font-size:0.75rem; color:#9ca3af; margin-top:2px;">unpaid invoices</div>
+                <div class="summary-card">
+                    <div class="summary-label">OUTSTANDING BALANCE</div>
+                    <div class="summary-value">₱@TotalOutstanding.ToString("N2")</div>
+                    <div class="summary-desc">unpaid invoices</div>
+                </div>
+            </div>
+
+            <!-- Employee Cards -->
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="summary-label">TOTAL EMPLOYEES</div>
+                    <div class="summary-value">@TotalEmployees</div>
+                    <div class="summary-desc">Active staff members</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">PRESENT</div>
+                    <div class="summary-value" style="color:#10b981;">@PresentEmployees</div>
+                    <div class="summary-desc">Employees present today</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">LATE</div>
+                    <div class="summary-value" style="color:#f97316;">@LateEmployees</div>
+                    <div class="summary-desc">Employees late today</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">ABSENT</div>
+                    <div class="summary-value" style="color:#ef4444;">@AbsentEmployees</div>
+                    <div class="summary-desc">Employees absent today</div>
+                </div>
+            </div>
+
+            <!-- Cleaning Schedule Cards -->
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="summary-label">NEEDS CLEANING</div>
+                    <div class="summary-value">@RoomsForCleaning</div>
+                    <div class="summary-desc">Rooms requiring cleaning</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">ACTIVE TASKS</div>
+                    <div class="summary-value">@ActiveCleaningTasks</div>
+                    <div class="summary-desc">Currently in progress</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">AVAILABLE STAFF</div>
+                    <div class="summary-value">@AvailableHousekeepers</div>
+                    <div class="summary-desc">Housekeepers available</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">MAINTENANCE</div>
+                    <div class="summary-value">@MaintenanceRooms</div>
+                    <div class="summary-desc">Rooms under maintenance</div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-grid">
+                <!-- Check-In Chart -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>📅 Daily Check-Ins (Last 7 Days)</h3>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="checkInChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Inventory Chart -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>📦 Inventory by Category</h3>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="inventoryChart"></canvas>
+                    </div>
+                    @if (LowStockItems.Any())
+                    {
+                        <div class="chart-footer">
+                            <div class="restock-info">
+                                <h4>⚠️ Low Stock Items Needing Restock</h4>
+                                <table class="restock-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Current</th>
+                                            <th>Reorder Point</th>
+                                            <th>Suggested Qty</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in LowStockItems.Take(5))
+                                        {
+                                            var currentStock = item.CurrentStock ?? 0;
+                                            var reorderPoint = item.ReorderPoint ?? 0;
+                                            var suggestedQty = Math.Max(reorderPoint * 2 - currentStock, reorderPoint);
+                                            <tr>
+                                                <td style="font-weight:600;">@item.ItemName</td>
+                                                <td><span class="stock-badge critical">@currentStock</span></td>
+                                                <td>@reorderPoint</td>
+                                                <td style="color:#0f766e; font-weight:600;">@suggestedQty</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                                @if (LowStockItems.Count > 5)
+                                {
+                                    <div style="text-align:center; margin-top:8px;">
+                                        <a href="/inventory/alerts" style="color:#0f766e; font-size:0.85rem; text-decoration:none;">View All @LowStockItems.Count Items →</a>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Attendance Chart -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>👥 Employee Attendance Status</h3>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="attendanceChart"></canvas>
+                    </div>
                 </div>
             </div>
         }
@@ -70,6 +190,24 @@
     private int ActiveGuests = 0;
     private int PendingHousekeepingTasks = 0;
     private decimal TotalOutstanding = 0m;
+
+    // Employee data
+    private int TotalEmployees = 0;
+    private int PresentEmployees = 0;
+    private int LateEmployees = 0;
+    private int AbsentEmployees = 0;
+
+    // Cleaning schedule data
+    private int RoomsForCleaning = 0;
+    private int ActiveCleaningTasks = 0;
+    private int AvailableHousekeepers = 0;
+    private int MaintenanceRooms = 0;
+
+    // Chart data
+    private List<DailyCheckIn> DailyCheckIns = new();
+    private List<InventoryCategoryData> InventoryByCategory = new();
+    private AttendanceStatusData AttendanceStatus = new();
+    private List<InventoryItem> LowStockItems = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -101,7 +239,17 @@
 
             TotalOutstanding = await DbContext.Bills.Where(b => b.BalanceDue != null).SumAsync(b => (decimal?)b.BalanceDue) ?? 0m;
 
+            // Load employee data
+            await LoadEmployeeData();
+
+            // Load cleaning schedule data
+            await LoadCleaningData();
+
+            // Load chart data
+            await LoadChartData();
+
             IsLoaded = true;
+            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -111,4 +259,374 @@
             await JSRuntime.InvokeVoidAsync("alert", $"Dashboard load error: {ex.Message}");
         }
     }
+
+    private async Task LoadEmployeeData()
+    {
+        try
+        {
+            var todayDate = DateOnly.FromDateTime(DateTime.Today);
+            
+            // Total active employees
+            TotalEmployees = await DbContext.Employees.CountAsync(e => e.Status == "Active");
+
+            // Get today's schedules
+            var todaySchedules = await DbContext.Schedules
+                .Where(s => s.ScheduleDate == todayDate && s.IsActive == true)
+                .ToListAsync();
+
+            var scheduleIds = todaySchedules.Select(s => s.ScheduleId).ToList();
+
+            // Get today's attendances
+            var todayAttendances = await DbContext.Attendances
+                .Include(a => a.Schedule)
+                .Where(a => a.AttendanceDate == todayDate && scheduleIds.Contains(a.ScheduleId))
+                .ToListAsync();
+
+            PresentEmployees = todayAttendances.Count(a => a.AttendanceStatus == "Present");
+            AbsentEmployees = todayAttendances.Count(a => a.AttendanceStatus == "Absent");
+            
+            // Calculate late count (check-in time > scheduled start + 15 minutes)
+            LateEmployees = todayAttendances.Count(a =>
+                a.ActualCheckIn.HasValue &&
+                a.Schedule != null &&
+                a.ActualCheckIn.Value.TimeOfDay > a.Schedule.ScheduledStart.ToTimeSpan().Add(TimeSpan.FromMinutes(15)));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading employee data: {ex.Message}");
+        }
+    }
+
+    private async Task LoadCleaningData()
+    {
+        try
+        {
+            // Get rooms for cleaning
+            var roomsForCleaningList = await HousekeepingService.GetRoomsForCleaningAsync();
+            RoomsForCleaning = roomsForCleaningList.Count;
+
+            // Get active tasks
+            var activeTasksList = await HousekeepingService.GetActiveTasksAsync();
+            ActiveCleaningTasks = activeTasksList.Count;
+
+            // Get available housekeepers
+            var availableHousekeepersList = await HousekeepingService.GetAvailableHousekeepersAsync();
+            AvailableHousekeepers = availableHousekeepersList.Count;
+
+            // Get rooms under maintenance
+            var maintenanceRoomsList = await HousekeepingService.GetRoomsUnderMaintenanceAsync();
+            MaintenanceRooms = maintenanceRoomsList.Count;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading cleaning data: {ex.Message}");
+        }
+    }
+
+    private async Task LoadChartData()
+    {
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var sevenDaysAgo = today.AddDays(-6);
+
+            // 1. Daily Check-Ins (Last 7 Days)
+            DailyCheckIns.Clear();
+            for (int i = 6; i >= 0; i--)
+            {
+                var date = today.AddDays(-i);
+                var checkInCount = await DbContext.Reservations
+                    .CountAsync(r => r.CheckInDate == date);
+                DailyCheckIns.Add(new DailyCheckIn
+                {
+                    Date = date,
+                    Count = checkInCount
+                });
+            }
+
+            // 2. Inventory by Category
+            InventoryByCategory.Clear();
+            var inventoryItems = await DbContext.InventoryItems
+                .Where(i => i.IsActive == true)
+                .ToListAsync();
+            
+            var categoryGroups = inventoryItems
+                .GroupBy(i => i.Category)
+                .Select(g => new InventoryCategoryData
+                {
+                    Category = g.Key,
+                    TotalStock = g.Sum(i => i.CurrentStock ?? 0),
+                    TotalValue = g.Sum(i => (i.CurrentStock ?? 0) * i.UnitCost),
+                    ItemCount = g.Count()
+                })
+                .OrderByDescending(c => c.TotalStock)
+                .Take(6)
+                .ToList();
+            
+            InventoryByCategory = categoryGroups;
+
+            // Low stock items for restock info
+            LowStockItems = inventoryItems
+                .Where(i => (i.CurrentStock ?? 0) <= (i.ReorderPoint ?? 0))
+                .OrderBy(i => i.CurrentStock ?? 0)
+                .ToList();
+
+            // 3. Attendance Status (Today)
+            var todayDate = DateOnly.FromDateTime(DateTime.Today);
+            var todayAttendances = await DbContext.Attendances
+                .Include(a => a.Schedule)
+                .Where(a => a.AttendanceDate == todayDate)
+                .ToListAsync();
+
+            AttendanceStatus = new AttendanceStatusData
+            {
+                Present = todayAttendances.Count(a => a.AttendanceStatus == "Present"),
+                Absent = todayAttendances.Count(a => a.AttendanceStatus == "Absent"),
+                OnLeave = todayAttendances.Count(a => a.AttendanceStatus == "OnLeave"),
+                Late = todayAttendances.Count(a => a.AttendanceStatus == "Late" || (a.ActualCheckIn.HasValue && a.Schedule != null && a.ActualCheckIn.Value.TimeOfDay > a.Schedule.ScheduledStart.ToTimeSpan().Add(TimeSpan.FromMinutes(15)))),
+                TotalEmployees = await DbContext.Employees.CountAsync(e => e.Status == "Active")
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading chart data: {ex.Message}");
+        }
+    }
+
+    private async Task RenderCharts()
+    {
+        try
+        {
+            // Wait for DOM to be ready
+            await Task.Delay(500);
+            StateHasChanged();
+
+            // 1. Check-In Line Chart
+            if (DailyCheckIns.Any())
+            {
+                var checkInLabels = DailyCheckIns.Select(d => d.Date.ToString("MMM dd")).ToArray();
+                var checkInData = DailyCheckIns.Select(d => d.Count).ToArray();
+                await JSRuntime.InvokeVoidAsync("chartHelper.renderLineChart", 
+                    "checkInChart", 
+                    checkInLabels, 
+                    checkInData, 
+                    "Check-Ins", 
+                    "#0f766e", 
+                    "rgba(15, 118, 110, 0.1)");
+            }
+
+            // 2. Inventory Bar Chart
+            if (InventoryByCategory.Any())
+            {
+                var inventoryLabels = InventoryByCategory.Select(i => i.Category).ToArray();
+                var inventoryData = InventoryByCategory.Select(i => (double)i.TotalStock).ToArray();
+                var inventoryColors = new[] { "#0d9488", "#0f766e", "#115e59", "#134e4a", "#14b8a6", "#2dd4bf" };
+                await JSRuntime.InvokeVoidAsync("chartHelper.renderBarChart", 
+                    "inventoryChart", 
+                    inventoryLabels, 
+                    inventoryData, 
+                    inventoryColors, 
+                    "Stock Quantity");
+            }
+
+            // 3. Attendance Doughnut Chart
+            var attendanceLabels = new[] { "Present", "Absent", "On Leave", "Late" };
+            var attendanceData = new[] { 
+                (double)AttendanceStatus.Present, 
+                (double)AttendanceStatus.Absent, 
+                (double)AttendanceStatus.OnLeave, 
+                (double)AttendanceStatus.Late 
+            };
+            var attendanceColors = new[] { "#10b981", "#ef4444", "#f59e0b", "#f97316" };
+            await JSRuntime.InvokeVoidAsync("chartHelper.renderDoughnutChart", 
+                "attendanceChart", 
+                attendanceLabels, 
+                attendanceData, 
+                attendanceColors);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error rendering charts: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("console.error", $"Chart rendering error: {ex.Message}");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && IsLoaded && !HasError)
+        {
+            // Wait for DOM to be ready and render charts
+            await Task.Delay(600);
+            await RenderCharts();
+        }
+    }
+
+    // Data classes
+    private class DailyCheckIn
+    {
+        public DateOnly Date { get; set; }
+        public int Count { get; set; }
+    }
+
+    private class InventoryCategoryData
+    {
+        public string Category { get; set; } = string.Empty;
+        public int TotalStock { get; set; }
+        public decimal TotalValue { get; set; }
+        public int ItemCount { get; set; }
+    }
+
+    private class AttendanceStatusData
+    {
+        public int Present { get; set; }
+        public int Absent { get; set; }
+        public int OnLeave { get; set; }
+        public int Late { get; set; }
+        public int TotalEmployees { get; set; }
+    }
 }
+
+<style>
+    /* Summary Cards - Matching Suppliers Style */
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    .summary-card {
+        background: #e0f2f1; /* Light Cyan/Teal */
+        border-radius: 16px;
+        padding: 24px;
+        border: none;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 160px;
+        position: relative;
+        transition: transform 0.2s;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .summary-card .summary-label {
+        color: #0e7490; /* Cyan-700 */
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .summary-card .summary-value {
+        color: #0f172a; /* Slate-900 */
+        font-size: 3.5rem;
+        font-weight: 800;
+        line-height: 1;
+        text-align: right;
+        margin: 0;
+    }
+
+    .summary-card .summary-desc {
+        color: #64748b; /* Slate-500 */
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-top: auto;
+    }
+
+    /* Charts Grid */
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        margin-top: 32px;
+    }
+
+    .chart-card {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chart-header {
+        background: linear-gradient(90deg, #064e49, #0f766e);
+        color: white;
+        padding: 16px 20px;
+    }
+
+    .chart-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .chart-body {
+        padding: 20px;
+        height: 300px;
+        position: relative;
+    }
+
+    .chart-footer {
+        padding: 16px 20px;
+        border-top: 1px solid #e5e7eb;
+        background: #f9fafb;
+    }
+
+    .restock-info h4 {
+        margin: 0 0 12px 0;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #991b1b;
+    }
+
+    .restock-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+    .restock-table th {
+        text-align: left;
+        padding: 8px;
+        font-weight: 700;
+        color: #64748b;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .restock-table td {
+        padding: 8px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .stock-badge {
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+
+    .stock-badge.critical {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    @@media (max-width: 1200px) {
+        .charts-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .charts-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

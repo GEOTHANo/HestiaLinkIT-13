@@ -140,6 +140,12 @@ public partial class HestiaLinkContext : DbContext
                 .WithMany(s => s.InventoryItems)
                 .HasForeignKey(i => i.SupplierID)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // InventoryItem-ServiceCategory relationship
+            entity.HasOne(i => i.ServiceCategory)
+                .WithMany()
+                .HasForeignKey(i => i.ServiceCategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configure ServiceInventory Relationships

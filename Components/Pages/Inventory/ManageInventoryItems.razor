@@ -255,6 +255,26 @@
                     <label class="form-label">Reorder Point</label>
                     <input type="number" class="form-input" @bind="EditReorderPoint" placeholder="10" />
                 </div>
+
+                <div class="form-group">
+                    <label class="form-label">Service Category</label>
+                    <select class="form-select" @bind="EditServiceCategoryId">
+                        <option value="">No Service Category</option>
+                        @foreach (var category in ServiceCategories)
+                        {
+                            <option value="@category.ServiceCategoryId">@category.ServiceCategoryName</option>
+                        }
+                    </select>
+                    <small class="form-text text-muted">Link this item to a service category for automatic inventory deduction</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" @bind="EditIsServiceItem" style="margin-right:8px;" />
+                        Is Service Item
+                    </label>
+                    <small class="form-text text-muted">Mark this item as used by services (required for automatic deduction)</small>
+                </div>
             </div>
 
             <div class="action-footer" style="border:none; padding-bottom:0; margin-top:10px;">
@@ -417,6 +437,9 @@
     private int EditCurrentStock = 0;
     private int EditReorderPoint = 10;
     private int EditSupplierID = 0;
+    private int? EditServiceCategoryId = null;
+    private bool EditIsServiceItem = false;
+    private List<ServiceCategory> ServiceCategories = new();
 
     // Stock adjustment
     private string AdjustmentType = "Add";
@@ -440,6 +463,11 @@
                 .ToListAsync();
 
             Suppliers = await InventoryService.GetActiveSuppliersAsync();
+
+            ServiceCategories = await DbContext.ServiceCategories
+                .Where(sc => sc.Status == "Active")
+                .OrderBy(sc => sc.ServiceCategoryName)
+                .ToListAsync();
 
             Categories = InventoryItems
                 .Where(i => i.IsActive == true)
@@ -513,11 +541,14 @@
         CurrentItem = new InventoryItem
         {
             ItemCode = GenerateItemCode(),
-            IsActive = true
+            IsActive = true,
+            IsServiceItem = false
         };
         EditCurrentStock = 0;
         EditReorderPoint = 10;
         EditSupplierID = 0;
+        EditServiceCategoryId = null;
+        EditIsServiceItem = false;
         IsEditMode = false;
         ShowModal = true;
     }
@@ -539,6 +570,8 @@
         EditCurrentStock = item.CurrentStock ?? 0;
         EditReorderPoint = item.ReorderPoint ?? 10;
         EditSupplierID = item.SupplierID ?? 0;
+        EditServiceCategoryId = item.ServiceCategoryId;
+        EditIsServiceItem = item.IsServiceItem ?? false;
         IsEditMode = true;
         ShowModal = true;
     }
@@ -608,18 +641,43 @@
 
             if (CurrentItem.UnitCost < 0)
             {
+                await JSRuntime.InvokeVoidAsync("alert", "Unit Cost cannot be negative");
+                return;
+            }
+
+            // Set form values to CurrentItem
+            CurrentItem.CurrentStock = EditCurrentStock;
+            CurrentItem.ReorderPoint = EditReorderPoint;
+            CurrentItem.SupplierID = EditSupplierID > 0 ? EditSupplierID : null;
+            CurrentItem.ServiceCategoryId = EditServiceCategoryId > 0 ? EditServiceCategoryId : null;
+            CurrentItem.IsServiceItem = EditIsServiceItem;
+            CurrentItem.CreatedDate = IsEditMode ? CurrentItem.CreatedDate : DateTime.Now;
+
+            if (IsEditMode)
+            {
+                var success = await InventoryService.UpdateItemAsync(CurrentItem);
+                if (success)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Item updated successfully");
+                    await LoadData();
+                    CloseModal();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Failed to update item");
+                }
+            }
+            else
+            {
+                await InventoryService.CreateItemAsync(CurrentItem);
+                await JSRuntime.InvokeVoidAsync("alert", "Item created successfully");
                 await LoadData();
-                await JSRuntime.InvokeVoidAsync("alert", "Item set to inactive");
+                CloseModal();
             }
         }
         catch (Exception ex)
         {
             await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
-        }
-        finally
-        {
-            ShowSetInactiveConfirm = false;
-            SetInactiveTarget = null;
         }
     }
 
@@ -941,7 +999,7 @@
 
     /* Action Buttons */
     .btn-icon-action {
-        background: #f1f5f9;
+        background: #0e5e6f;
         border: none;
         padding: 8px;
         border-radius: 8px;
@@ -952,31 +1010,43 @@
     .btn-icon-action svg {
         width: 18px;
         height: 18px;
-        fill: #64748b;
+        fill: white;
+    }
+
+    .btn-icon-action.edit {
+        background: #0e5e6f;
+    }
+
+    .btn-icon-action.edit svg {
+        fill: white;
     }
 
     .btn-icon-action.edit:hover {
-        background: #0f766e;
+        background: #0b4b59;
     }
 
-    .btn-icon-action.edit:hover svg {
+    .btn-icon-action.stock {
+        background: #10b981;
+    }
+
+    .btn-icon-action.stock svg {
         fill: white;
     }
 
     .btn-icon-action.stock:hover {
-        background: #2563eb;
+        background: #059669;
     }
 
-    .btn-icon-action.stock:hover svg {
+    .btn-icon-action.archive {
+        background: #0e5e6f;
+    }
+
+    .btn-icon-action.archive svg {
         fill: white;
     }
 
     .btn-icon-action.archive:hover {
-        background: #f59e0b;
-    }
-
-    .btn-icon-action.archive:hover svg {
-        fill: white;
+        background: #0b4b59;
     }
 
     /* Modal */
