@@ -111,7 +111,6 @@
                         </button>
                         <div class="sidebar-submenu @(ExpandedSection == "finance" ? "open" : "")">
                             <button class="sidebar-subnav-item @(GetActiveClass("/finance/billing-invoices"))" @onclick='() => NavigateTo("/finance/billing-invoices")'>Billing Invoices</button>
-                            <button class="sidebar-subnav-item @(GetActiveClass("/finance/expense-tracking"))" @onclick='() => NavigateTo("/finance/expense-tracking")'>Expense Tracking</button>
                             <button class="sidebar-subnav-item @(GetActiveClass("/finance/financial-reports"))" @onclick='() => NavigateTo("/finance/financial-reports")'>Financial Reports</button>
                             <button class="sidebar-subnav-item @(GetActiveClass("/finance/payment-processing"))" @onclick='() => NavigateTo("/finance/payment-processing")'>Payment Processing</button>
                         </div>

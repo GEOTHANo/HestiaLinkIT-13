@@ -20,7 +20,7 @@
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
             <div class="stat-card">
                 <div class="stat-title">Today's Payments</div>
-                <div class="stat-value">₱@TodayPayments.ToString("N2")</div>
+                <div class="stat-value">&#8369;@TodayPayments.ToString("N2")</div>
             </div>
             <div class="stat-card">
                 <div class="stat-title">Pending Payments</div>
@@ -28,11 +28,11 @@
             </div>
             <div class="stat-card">
                 <div class="stat-title">Total Collected</div>
-                <div class="stat-value">₱@TotalCollected.ToString("N2")</div>
+                <div class="stat-value">&#8369;@TotalCollected.ToString("N2")</div>
             </div>
             <div class="stat-card">
                 <div class="stat-title">Outstanding</div>
-                <div class="stat-value" style="color: #991b1b;">₱@OutstandingBalance.ToString("N2")</div>
+                <div class="stat-value" style="color: #991b1b;">&#8369;@OutstandingBalance.ToString("N2")</div>
             </div>
         </div>
 
@@ -40,7 +40,7 @@
         <div class="user-toolbar">
             <div class="toolbar-left">
                 <div class="toolbar-search">
-                    <input type="text" placeholder="Search by guest or invoice..." @bind="SearchText" />
+                    <input type="text" placeholder="Search by guest or invoice..." @bind="SearchText" @bind:event="oninput" />
                     <span class="search-icon">🔍</span>
                 </div>
                 <select class="filter-select" @bind="PaymentStatusFilter">
@@ -69,7 +69,6 @@
                 <table class="user-table">
                     <thead>
                         <tr>
-                            <th>Payment Date</th>
                             <th>Invoice ID</th>
                             <th>Guest Name</th>
                             <th>Room</th>
@@ -78,27 +77,29 @@
                             <th>Balance</th>
                             <th>Payment Method</th>
                             <th>Reference No.</th>
+                            <th>Payment Date</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var payment in FilteredPayments)
+                        @foreach (var payment in PaginatedPayments)
                         {
                             <tr>
-                                <td>@payment.PaymentDate.ToString("MMM dd, yyyy HH:mm")</td>
                                 <td style="font-weight: 700; color: var(--color-teal);">INV-@payment.InvoiceId.ToString("D5")</td>
                                 <td style="font-weight: 700;">@payment.GuestName</td>
                                 <td>@payment.RoomNumber</td>
-                                <td>₱@payment.TotalBill.ToString("N2")</td>
-                                <td style="font-weight: 900; color: var(--color-teal);">₱@payment.AmountPaid.ToString("N2")</td>
-                                <td style="font-weight: 700; color: @(payment.Balance > 0 ? "#991b1b" : "#065f46");">₱@payment.Balance.ToString("N2")</td>
+
+                                <td>&#8369;@payment.TotalBill.ToString("N2")</td>
+                                <td style="font-weight: 900; color: var(--color-dark-teal);">&#8369;@payment.AmountPaid.ToString("N2")</td>
+                                <td style="font-weight: 700; color: @(payment.Balance > 0 ? "#991b1b" : "#065f46");">&#8369;@payment.Balance.ToString("N2")</td>
                                 <td>
                                     <span class="status-badge" style="background: var(--color-light-gray); color: var(--color-dark-teal);">
                                         @payment.PaymentMethod
                                     </span>
                                 </td>
                                 <td style="font-family: monospace; font-size: 0.85rem;">@payment.ReferenceNumber</td>
+                                <td>@payment.PaymentDate.ToString("MMM dd, yyyy h:mm tt")</td>
                                 <td>
                                     <span class="status-badge status-@payment.Status.ToLower()">@payment.Status</span>
                                 </td>
@@ -117,37 +118,26 @@
                     </tbody>
                 </table>
             </div>
-        </div>
 
-        <!-- Payment Method Breakdown -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px;">
-            <div class="panel-card">
-                <div style="background: var(--color-dark-teal); color: var(--color-white); padding: 16px 24px; font-weight: 900; border-radius: 12px 12px 0 0;">
-                    Cash Payments
+            <!-- Pagination -->
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Showing @(((CurrentPage - 1) * PageSize) + 1) to @(Math.Min(CurrentPage * PageSize, TotalFilteredCount)) of @TotalFilteredCount payments
                 </div>
-                <div class="panel-body" style="text-align: center; padding: 30px;">
-                    <div style="font-size: 2rem; font-weight: 900; color: var(--color-teal);">₱@CashPayments.ToString("N2")</div>
-                    <div style="font-size: 0.9rem; color: var(--color-dark-teal); margin-top: 8px;">@CashPaymentCount transactions</div>
-                </div>
-            </div>
-
-            <div class="panel-card">
-                <div style="background: var(--color-dark-teal); color: var(--color-white); padding: 16px 24px; font-weight: 900; border-radius: 12px 12px 0 0;">
-                    Card Payments
-                </div>
-                <div class="panel-body" style="text-align: center; padding: 30px;">
-                    <div style="font-size: 2rem; font-weight: 900; color: var(--color-teal);">₱@CardPayments.ToString("N2")</div>
-                    <div style="font-size: 0.9rem; color: var(--color-dark-teal); margin-top: 8px;">@CardPaymentCount transactions</div>
-                </div>
-            </div>
-
-            <div class="panel-card">
-                <div style="background: var(--color-dark-teal); color: var(--color-white); padding: 16px 24px; font-weight: 900; border-radius: 12px 12px 0 0;">
-                    Digital Wallets
-                </div>
-                <div class="panel-body" style="text-align: center; padding: 30px;">
-                    <div style="font-size: 2rem; font-weight: 900; color: var(--color-teal);">₱@DigitalPayments.ToString("N2")</div>
-                    <div style="font-size: 0.9rem; color: var(--color-dark-teal); margin-top: 8px;">@DigitalPaymentCount transactions</div>
+                <div class="pagination-controls">
+                    <button class="btn-page" disabled="@(CurrentPage == 1)" @onclick="() => GoToPage(1)" title="First">
+                        &laquo;
+                    </button>
+                    <button class="btn-page" disabled="@(CurrentPage == 1)" @onclick="() => GoToPage(CurrentPage - 1)" title="Previous">
+                        &lt;
+                    </button>
+                    <span class="page-indicator">Page @CurrentPage of @TotalPages</span>
+                    <button class="btn-page" disabled="@(CurrentPage >= TotalPages)" @onclick="() => GoToPage(CurrentPage + 1)" title="Next">
+                        &gt;
+                    </button>
+                    <button class="btn-page" disabled="@(CurrentPage >= TotalPages)" @onclick="() => GoToPage(TotalPages)" title="Last">
+                        &raquo;
+                    </button>
                 </div>
             </div>
         </div>
@@ -163,20 +153,20 @@
                 <h2 style="margin:0; font-size:1.4rem;">Process Payment</h2>
             </div>
 
-            <div class="form-group" style="margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 12px;">
                 <label class="form-label">Invoice ID</label>
                 <div style="display:flex; gap: 8px;">
-                    <input type="number" class="form-input" @bind="NewPayment.InvoiceId" placeholder="Enter Invoice ID to fetch" />
-                    <button class="btn-primary" style="padding: 8px 16px;" @onclick="FetchBillDetails">Fetch</button>
+                    <input type="text" class="form-input" @bind="NewPayment.InvoiceId" placeholder="Enter Invoice ID" style="flex: 1;" />
+                    <button class="btn-primary" style="padding: 8px 16px; width: auto; min-width: 80px;" @onclick="FetchBillDetails">Search</button>
                 </div>
             </div>
 
-            <div class="form-group" style="margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 12px;">
                  <label class="form-label">Guest Name</label>
                  <input type="text" class="form-input" @bind="NewPayment.GuestName" readonly style="background-color: #f3f4f6;" />
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                 <div class="form-group">
                     <label class="form-label">Room Number</label>
                     <input type="text" class="form-input" @bind="NewPayment.RoomNumber" readonly style="background-color: #f3f4f6;" />
@@ -184,42 +174,109 @@
                 <div class="form-group">
                     <label class="form-label">Current Balance</label>
                      <!-- Display ONLY the unpaid balance, not full bill, to avoid confusion -->
-                    <input type="text" class="form-input" value="₱@CurrentBillBalance.ToString("N2")" readonly style="background-color: #f3f4f6; font-weight: bold; color: #991b1b;" />
+                    <input type="text" class="form-input" value="&#8369;@(CurrentBillBalance.ToString("N2"))" readonly style="background-color: #f3f4f6; font-weight: bold; color: #991b1b;" />
                 </div>
             </div>
 
-            <div class="form-group" style="margin-bottom: 16px;">
-                <label class="form-label">Amount Paying</label>
-                <input type="number" class="form-input" @bind="NewPayment.AmountPaid" placeholder="0.00" />
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="form-group">
+                    <label class="form-label">Amount Paying</label>
+                    <input type="number" class="form-input" @bind="NewPayment.AmountPaid" placeholder="0.00" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Payment Method</label>
+                    <select class="form-select" @bind="NewPayment.PaymentMethod">
+                        <option value="Cash">Cash</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Debit Card">Debit Card</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="GCash">GCash</option>
+                        <option value="Maya">Maya</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="form-group" style="margin-bottom: 16px;">
-                <label class="form-label">Payment Method</label>
-                <select class="form-select" @bind="NewPayment.PaymentMethod">
-                    <option value="Cash">Cash</option>
-                    <option value="Credit Card">Credit Card</option>
-                    <option value="Debit Card">Debit Card</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="GCash">GCash</option>
-                    <option value="Maya">Maya</option>
-                </select>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 20px;">
-                <label class="form-label">Reference Number (Optional)</label>
-                <input type="text" class="form-input" @bind="NewPayment.ReferenceNumber" placeholder="Transaction reference" />
-            </div>
-
-            <div style="background: var(--color-cream); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <div style="background: var(--color-cream); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between;">
                     <span style="font-weight: 600;">Balance After Payment:</span>
-                    <span style="font-weight: 900; color: var(--color-teal); font-size: 1.2rem;">₱@(CurrentBillBalance - NewPayment.AmountPaid).ToString("N2")</span>
+                    <span style="font-weight: 900; color: var(--color-dark-teal); font-size: 1.1rem;">&#8369;@((CurrentBillBalance - NewPayment.AmountPaid).ToString("N2"))</span>
                 </div>
             </div>
+
+            @if (!string.IsNullOrEmpty(PaymentErrorMessage))
+            {
+                <div style="background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-weight: 600;">
+                    @PaymentErrorMessage
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(PaymentSuccessMessage))
+            {
+                <div style="background: #d1fae5; color: #065f46; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-weight: 600;">
+                    @PaymentSuccessMessage
+                </div>
+            }
 
             <div style="display: flex; gap: 12px;">
                 <button class="btn-primary" style="flex: 1;" @onclick="ProcessPayment">Process Payment</button>
                 <button class="btn-secondary" style="flex: 1;" @onclick="CloseModals">Cancel</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Receipt Modal -->
+@if (ShowReceiptModal && SelectedPayment != null)
+{
+    <div class="modal-overlay" @onclick="CloseModals">
+        <div class="modal-content" style="max-width: 450px; padding: 0;" @onclick:stopPropagation="true">
+            <div style="background: var(--color-teal); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                <h2 style="margin: 0; font-size: 1.5rem;">OFFICIAL RECEIPT</h2>
+                <div style="font-size: 0.9rem; opacity: 0.9; margin-top: 4px;">Hestia Link Hotel Management</div>
+            </div>
+            
+            <div style="padding: 24px;">
+                <div style="text-align: center; margin-bottom: 24px; border-bottom: 2px dashed #d1d5db; padding-bottom: 20px;">
+                    <div style="font-size: 0.85rem; color: #6b7280; font-weight: 600;">AMOUNT PAID</div>
+                    <div style="font-size: 2.5rem; font-weight: 900; color: var(--color-dark-teal);">&#8369;@SelectedPayment.AmountPaid.ToString("N2")</div>
+
+                </div>
+
+                <div style="display: grid; gap: 12px; font-size: 0.95rem;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280;">Reference No.</span>
+                        <span style="font-weight: 700; font-family: monospace;">@SelectedPayment.ReferenceNumber</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280;">Payment Date</span>
+                        <span style="font-weight: 600;">@SelectedPayment.PaymentDate.ToString("MMM dd, yyyy h:mm tt")</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280;">Payment Method</span>
+                        <span style="font-weight: 600;">@SelectedPayment.PaymentMethod</span>
+                    </div>
+                    <div style="border-top: 1px solid #f3f4f6; margin: 8px 0;"></div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280;">Invoice ID</span>
+                        <span style="font-weight: 600;">INV-@SelectedPayment.InvoiceId.ToString("D5")</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280;">Guest Name</span>
+                        <span style="font-weight: 600;">@SelectedPayment.GuestName</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280;">Room</span>
+                        <span style="font-weight: 600;">@SelectedPayment.RoomNumber</span>
+                    </div>
+                     <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280;">Balance Due</span>
+                        <span style="font-weight: 700; color: @(SelectedPayment.Balance > 0 ? "#991b1b" : "#065f46");">&#8369;@SelectedPayment.Balance.ToString("N2")</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <button class="btn-primary" style="width: 100%;" @onclick="CloseModals">Close Receipt</button>
+                    <button class="btn-secondary" style="width: 100%; margin-top: 8px;" @onclick="() => PrintReceipt(SelectedPayment)">Print Receipt</button>
+                </div>
             </div>
         </div>
     </div>
@@ -230,6 +287,47 @@
     .status-partial { background-color: #fef3c7; color: #92400e; }
     .status-pending { background-color: #fee2e2; color: #991b1b; }
     .status-refunded { background-color: var(--color-light-gray); color: var(--color-dark-teal); }
+    
+    /* Pagination Styles */
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 0;
+        margin-top: 16px;
+        border-top: 1px solid #e5e7eb;
+    }
+    .pagination-info {
+        color: var(--color-teal);
+        font-size: 0.9rem;
+    }
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-page {
+        background: none;
+        border: 1px solid #d1d5db;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        color: var(--color-dark-teal);
+        font-weight: 600;
+        min-width: 36px;
+    }
+    .btn-page:hover:not(:disabled) {
+        background: var(--color-light-gray);
+    }
+    .btn-page:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    .page-indicator {
+        color: var(--color-dark-teal);
+        font-weight: 600;
+        padding: 0 12px;
+    }
 </style>
 
 @code {
@@ -255,6 +353,10 @@
     private string PaymentMethodFilter = "";
     private bool ShowProcessModal = false;
     private decimal CurrentBillBalance = 0; // Helper for modal
+    private string PaymentErrorMessage = ""; // For validation errors
+    private string PaymentSuccessMessage = ""; // For success messages
+    private bool ShowReceiptModal = false;
+    private PaymentViewModel? SelectedPayment = null;
 
     private decimal TodayPayments => Payments.Where(p => p.PaymentDate.Date == DateTime.Now.Date).Sum(p => p.AmountPaid);
     private int PendingCount => Payments.Count(p => p.Status == "Pending" || p.Status == "Partial"); // Logic adjustment
@@ -287,6 +389,25 @@
         .OrderByDescending(p => p.PaymentDate)
         .ToList();
 
+    // Pagination
+    private int CurrentPage = 1;
+    private int PageSize = 10;
+    private int TotalFilteredCount => FilteredPayments.Count;
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalFilteredCount / PageSize));
+    
+    private List<PaymentViewModel> PaginatedPayments => FilteredPayments
+        .Skip((CurrentPage - 1) * PageSize)
+        .Take(PageSize)
+        .ToList();
+
+    private void GoToPage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            CurrentPage = page;
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await LoadPayments();
@@ -318,7 +439,7 @@
                 Balance = (p.Bill?.GrandTotal ?? 0) - (p.Bill?.AmountPaid ?? 0), // Calc real balance from Bill
                 PaymentMethod = p.PaymentMethod ?? "Cash",
                 ReferenceNumber = p.ReferenceNumber ?? "",
-                Status = p.PaymentStatus ?? "Completed"
+                Status = p.Bill?.BillStatus ?? "Pending"
             }).ToList();
         }
         catch (Exception ex)
@@ -329,8 +450,12 @@
 
     private void OpenProcessPaymentModal()
     {
-        NewPayment = new PaymentViewModel { PaymentDate = DateTime.Now, PaymentMethod = "Cash" };
+        // Generate auto reference number: REF-yyyyMMddHHmmss
+        var refNumber = $"REF-{DateTime.Now:yyyyMMddHHmmss}";
+        NewPayment = new PaymentViewModel { PaymentDate = DateTime.Now, PaymentMethod = "Cash", ReferenceNumber = refNumber };
         CurrentBillBalance = 0;
+        PaymentErrorMessage = "";
+        PaymentSuccessMessage = "";
         ShowProcessModal = true;
     }
 
@@ -354,78 +479,110 @@
             
             // Calculate what has been paid so far
             decimal alreadyPaid = await _context.Payments.Where(p => p.BillId == bill.BillId).SumAsync(p => p.Amount ?? 0);
-            CurrentBillBalance = (bill.GrandTotal ?? 0) - alreadyPaid;
+            CurrentBillBalance = Math.Max(0, (bill.GrandTotal ?? 0) - alreadyPaid);
             
-            // Default amount to pay = balance
-            NewPayment.AmountPaid = CurrentBillBalance;
+            // Default amount to pay = balance (if balance > 0)
+            NewPayment.AmountPaid = CurrentBillBalance > 0 ? CurrentBillBalance : 0;
         }
     }
 
     private async Task ProcessPayment()
     {
-        if (NewPayment.InvoiceId == 0 || NewPayment.AmountPaid <= 0) return;
+        PaymentErrorMessage = "";
+        PaymentSuccessMessage = "";
 
-        using var transaction = _context.Database.BeginTransaction();
+        // Validation
+        if (NewPayment.InvoiceId == 0)
+        {
+            PaymentErrorMessage = "Please search for a valid Invoice ID first.";
+            return;
+        }
+        if (NewPayment.AmountPaid <= 0)
+        {
+            PaymentErrorMessage = "Amount must be greater than 0.";
+            return;
+        }
+        if (string.IsNullOrEmpty(NewPayment.GuestName) || NewPayment.GuestName == "Unknown")
+        {
+            PaymentErrorMessage = "Please search for a valid Invoice ID first.";
+            return;
+        }
+
         try
         {
-            // 1. Record Payment
-            var dbPayment = new HestiaLink.Models.Payment
+            // Use execution strategy for SQL Server retry support
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
             {
-                BillId = NewPayment.InvoiceId,
-                Amount = NewPayment.AmountPaid,
-                PaymentDate = DateTime.Now,
-                PaymentMethod = NewPayment.PaymentMethod,
-                ReferenceNumber = NewPayment.ReferenceNumber,
-                PaymentStatus = "Completed"
-            };
-            _context.Payments.Add(dbPayment);
-            await _context.SaveChangesAsync();
-
-            // 2. Update Bill Balance/Status
-            var bill = await _context.Bills.FindAsync(NewPayment.InvoiceId);
-            if (bill != null)
-            {
-                var existingPaid = bill.AmountPaid ?? 0;
-                bill.AmountPaid = existingPaid + NewPayment.AmountPaid;
-
-                // Simple check: if Paid >= GrandTotal, mark as Paid
-                if (bill.AmountPaid >= bill.GrandTotal)
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    bill.BillStatus = "Paid";
-                    bill.BalanceDue = 0;
-                }
-                else
-                {
-                    bill.BillStatus = "Partial";
-                    bill.BalanceDue = bill.GrandTotal - bill.AmountPaid;
-                }
-                _context.Bills.Update(bill);
-                await _context.SaveChangesAsync();
-            }
+                    // 1. Record Payment
+                    var dbPayment = new HestiaLink.Models.Payment
+                    {
+                        BillId = NewPayment.InvoiceId,
+                        Amount = NewPayment.AmountPaid,
+                        PaymentDate = DateTime.Now,
+                        PaymentMethod = NewPayment.PaymentMethod,
+                        ReferenceNumber = NewPayment.ReferenceNumber,
+                        PaymentStatus = "Completed"
+                    };
+                    _context.Payments.Add(dbPayment);
+                    await _context.SaveChangesAsync();
 
-            await transaction.CommitAsync();
+                    // 2. Update Bill Balance/Status
+                    var bill = await _context.Bills.FindAsync(NewPayment.InvoiceId);
+                    if (bill != null)
+                    {
+                        var existingPaid = bill.AmountPaid ?? 0;
+                        bill.AmountPaid = existingPaid + NewPayment.AmountPaid;
+
+                        if (bill.AmountPaid >= bill.GrandTotal)
+                        {
+                            bill.BillStatus = "Paid";
+                            bill.BalanceDue = 0;
+                        }
+                        else
+                        {
+                            bill.BillStatus = "Partial";
+                            bill.BalanceDue = bill.GrandTotal - bill.AmountPaid;
+                        }
+                        _context.Bills.Update(bill);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    await transaction.CommitAsync();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
+
             await LoadPayments();
             CloseModals();
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
-            Console.WriteLine($"Error processing payment: {ex.Message}");
+            PaymentErrorMessage = $"Error: {ex.Message}";
         }
     }
 
     private void ViewReceipt(PaymentViewModel payment)
     {
-        // View receipt logic
+        SelectedPayment = payment;
+        ShowReceiptModal = true;
     }
 
     private void PrintReceipt(PaymentViewModel payment)
     {
-        // Print receipt logic
+        // Print receipt logic placeholder
     }
 
     private void CloseModals()
     {
         ShowProcessModal = false;
+        ShowReceiptModal = false;
     }
 }
