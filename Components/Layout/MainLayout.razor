@@ -1,8 +1,10 @@
-﻿@inherits LayoutComponentBase
+﻿@namespace HestiaIT13Final.Components.Layout
+@inherits LayoutComponentBase
 @inject NavigationManager Navigation
 @inject HestiaLink.Services.UserSession UserSession
 
 <link rel="stylesheet" href="app.css" />
+<link rel="stylesheet" href="logout-styles.css" />
 
 <div class="dashboard-root">
     <aside class="dashboard-sidebar">
@@ -158,6 +160,12 @@
             }
         </nav>
 
+        <!-- Logout Button -->
+        <div class="sidebar-footer">
+            <button class="logout-button" @onclick="() => ShowLogoutConfirm = true">
+                <span>🚪</span> Logout
+            </button>
+        </div>
     </aside>
 
     <main class="dashboard-main">
@@ -165,8 +173,29 @@
     </main>
 </div>
 
+<!-- Logout Confirmation Modal -->
+@if (ShowLogoutConfirm)
+{
+    <div class="logout-modal-overlay" @onclick="() => ShowLogoutConfirm = false">
+        <div class="logout-modal" @onclick:stopPropagation="true">
+            <div class="logout-modal-header">
+                <h2>Confirm Logout</h2>
+            </div>
+            <div class="logout-modal-body">
+                <p>Are you sure you want to logout?</p>
+                <p style="font-size: 0.9rem; color: #64748b; margin-top: 12px;">You will be returned to the login page.</p>
+            </div>
+            <div class="logout-modal-footer">
+                <button class="btn-secondary" @onclick="() => ShowLogoutConfirm = false">Cancel</button>
+                <button class="btn-danger" @onclick="HandleLogout">Logout</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private string? ExpandedSection;
+    private bool ShowLogoutConfirm = false;
 
     protected override void OnInitialized()
     {

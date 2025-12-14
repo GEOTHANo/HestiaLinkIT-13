@@ -520,9 +520,9 @@
         .Take(PaymentsPerPage)
         .ToList();
 
-    private decimal TotalRevenue => BillSummary.Sum(b => b.GrandTotal ?? 0);
-    private decimal TotalPayments => PaymentHistory.Sum(p => p.Amount ?? 0);
-    private decimal TotalOutstanding => BillSummary.Where(b => b.BillStatus != "Paid").Sum(b => b.BalanceDue ?? 0);
+    private decimal TotalRevenue => BillSummary?.Sum(b => b.GrandTotal ?? 0) ?? 0;
+    private decimal TotalPayments => PaymentHistory?.Sum(p => p.Amount ?? 0) ?? 0;
+    private decimal TotalOutstanding => BillSummary?.Where(b => b.BillStatus != "Paid").Sum(b => b.BalanceDue ?? 0) ?? 0;
 
     // Calculate VAT and Service Charge from paid bills' subtotals
     private decimal PaidSubtotal => BillSummary.Where(b => b.BillStatus == "Paid").Sum(b => b.SubtotalAmount ?? 0);
@@ -605,8 +605,8 @@
             
             // Load Bills with Reservation and Guest navigation
             BillSummary = await _context.Bills
-                .Include(b => b.Reservation)
-                    .ThenInclude(r => r.Guest)
+                .Include(b => b.Reservation!)
+                    .ThenInclude(r => r!.Guest)
                 .Where(b => b.BillDate >= StartDate && b.BillDate <= EndDate)
                 .OrderByDescending(b => b.BillDate)
                 .ToListAsync();

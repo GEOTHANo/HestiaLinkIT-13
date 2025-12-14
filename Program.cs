@@ -25,18 +25,17 @@ public static class MauiProgram
         // Add DbContext with SQL Server connection
         builder.Services.AddDbContext<HestiaLinkContext>(options =>
             options.UseSqlServer(GetConnectionString()));
+        
+        // Register DbContextFactory for components to avoid threading issues
+        builder.Services.AddDbContextFactory<HestiaLinkContext>(options =>
+            options.UseSqlServer(GetConnectionString()));
 
         return builder;
     }
 
     private static string GetConnectionString()
     {
-        // Use the connection string from appsettings.json
-        var config = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .Build();
-
-        return config.GetConnectionString("DefaultConnection") 
-            ?? "Data Source=.\\SQLEXPRESS;Initial Catalog=IT13;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=true";
+        // Connection string for MAUI app
+        return "Data Source=JESTER-PC\\SQLEXPRESS;Initial Catalog=IT13;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False;MultipleActiveResultSets=true";
     }
 }

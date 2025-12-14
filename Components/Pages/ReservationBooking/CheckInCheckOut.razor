@@ -1,4 +1,4 @@
-﻿@page "/reservations/check-in-check-out"
+@page "/reservations/check-in-check-out"
 @using System.Linq
 @using System.Data
 @using HestiaLink.Data
@@ -9,7 +9,7 @@
 @inject IJSRuntime JSRuntime
 @inject UserSession UserSession
 @inject InventoryService InventoryService
-@layout MainLayout
+@layout HestiaIT13Final.Components.Layout.MainLayout
 
 <!-- Keep all your existing HTML code exactly as it is -->
 <!-- ... -->
@@ -50,7 +50,6 @@
         <div class="toolbar" style="display:flex; align-items:center; gap:16px; margin-bottom:18px;">
             <div style="display:flex; gap:12px; align-items:center; flex: 1;">
                 <div class="search-box" style="width: 320px;">
-                    <span class="search-icon">🔍</span>
                     <input placeholder="Search by room or guest..." @bind="SearchText" @bind:event="oninput" />
                 </div>
                 <select class="filter-select" @bind="FilterStatus" style="width: 140px;">
@@ -74,7 +73,7 @@
             </div>
         </div>
 
-        @if (!Rooms.Any())
+        @if (IsLoaded && !Rooms.Any())
         {
             <div style="padding:12px; border-radius:8px; background:#fff4f8; color:#7f1d1d; margin-bottom:12px;">
                 No rooms loaded from database. Click Refresh to retry or check that views `vw_RoomStatusDisplay` / `vw_RoomAvailability` exist and your connection string is correct.
@@ -178,48 +177,44 @@
                         </div>
                         <div class="form-group" style="grid-column: 1 / -1;">
                             <label class="form-label">Services</label>
-                            <div class="multi-dropdown">
-                                <button class="dropdown-toggle" @onclick="ToggleServicesDropdown" style="width:100%; text-align:left; display:flex; justify-content:space-between; align-items:center;">
+                            <div class="service-picker">
+                                <button class="service-toggle" @onclick="ToggleServicesDropdown">
                                     <span>@GetSelectedServicesLabel()</span>
-                                    <span style="font-size:0.8em; opacity:0.6;">▼</span>
+                                    <span class="caret">▼</span>
                                 </button>
                                 @if (ShowServicesDropdown)
                                 {
-                                    <div class="dropdown-panel" style="width:100%; max-height:300px; overflow-y:auto;">
+                                    <div class="service-dropdown">
                                         @if (AvailableServices.Any())
                                         {
                                             @foreach (var categoryGroup in AvailableServices.GroupBy(s => s.ServiceCategory?.ServiceCategoryName ?? "Other").OrderBy(g => g.Key))
                                             {
-                                                <div style="padding:8px 12px; background:#f8fafc; font-weight:700; font-size:0.85rem; color:#0f766e; border-bottom:1px solid #e5e7eb;">
-                                                    @categoryGroup.Key
-                                                </div>
+                                                <div class="service-category">@categoryGroup.Key</div>
                                                 @foreach (var svc in categoryGroup)
                                                 {
                                                     var requirements = GetServiceInventoryRequirementsSync(svc.ServiceId);
                                                     var hasInsufficientInventory = requirements.Any(r => !r.HasSufficientStock);
-                                                    
-                                                    <label class="dropdown-item" style="@(hasInsufficientInventory ? "background-color: #fef3c7;" : "")">
-                                                        <input type="checkbox" 
-                                                               checked="@SelectedServiceIds.Contains(svc.ServiceId)" 
-                                                               @onchange="(e) => ToggleServiceSelection(svc.ServiceId, (bool?)e.Value == true)" 
+                                                    var isSelected = SelectedServiceIds.Contains(svc.ServiceId);
+
+                                                    <label class="service-item @(isSelected ? "selected" : string.Empty) @(hasInsufficientInventory ? "warning" : string.Empty)">
+                                                        <input type="checkbox"
+                                                               checked="@isSelected"
+                                                               @onchange="(e) => ToggleServiceSelection(svc.ServiceId, (bool?)e.Value == true)"
                                                                disabled="@hasInsufficientInventory" />
-                                                        
-                                                        <div style="display:flex; justify-content:space-between; width:100%;">
-                                                            <div>
-                                                                <span>@svc.ServiceName</span>
+
+                                                        <div class="service-main">
+                                                            <div class="service-name">@svc.ServiceName
                                                                 @if (hasInsufficientInventory)
                                                                 {
-                                                                    <span style="margin-left: 8px; font-size: 0.7rem; color: #d97706;">(Low Stock)</span>
+                                                                    <span class="service-flag">Low Stock</span>
                                                                 }
                                                             </div>
-                                                            <div style="display:flex; gap:8px; align-items:center;">
+                                                            <div class="service-tags">
                                                                 @if (svc.UsesInventory == true || svc.ServiceCategoryId != null)
                                                                 {
-                                                                    <span style="font-size:0.7rem; background:#d1fae5; color:#065f46; padding:2px 6px; border-radius:4px;">
-                                                                        Inventory
-                                                                    </span>
+                                                                    <span class="badge badge-inventory">Inventory</span>
                                                                 }
-                                                                <span style="color:#64748b; font-size:0.85rem;">₱@svc.StandardPrice.ToString("N2")</span>
+                                                                <span class="service-price">₱@svc.StandardPrice.ToString("N2")</span>
                                                             </div>
                                                         </div>
                                                     </label>
@@ -228,7 +223,7 @@
                                         }
                                         else
                                         {
-                                            <div style="padding:8px;color:#64748b;">No services available</div>
+                                            <div class="service-empty">No services available</div>
                                         }
                                     </div>
                                 }
@@ -271,9 +266,9 @@
                             <div style="font-size:0.85rem; color:#64748b; margin-bottom:4px;">Tax (12%)</div>
                             <div style="font-size:1.1rem; font-weight:600; color:#0f766e;">@(Math.Round((SelectedRoom?.RoomCharge ?? 0m) * 0.12m, 2).ToString("C"))</div>
                         </div>
-                        <div style="background:#0f766e; padding:16px; border-radius:8px; border:2px solid #064e3b;">
-                            <div style="font-size:0.85rem; color:#d1fae5; margin-bottom:8px; font-weight:600;">TOTAL PAYMENT</div>
-                            <div style="font-size:1.8rem; font-weight:700, color:#d1fae5;">@CalculateGuestTotal().ToString("C")</div>
+                        <div style="background:#0f766e; padding:18px; border-radius:12px; border:2px solid #0d5a52; box-shadow:0 8px 16px rgba(0,0,0,0.08);">
+                            <div style="font-size:0.9rem; color:#d1fae5; margin-bottom:8px; font-weight:700; letter-spacing:0.3px;">TOTAL PAYMENT</div>
+                            <div style="font-size:2rem; font-weight:800; color:#f8fafc;">@CalculateGuestTotal().ToString("C")</div>
                         </div>
                     </div>
                 </div>
@@ -455,6 +450,7 @@
     private bool ShowAddServiceModal = false;
     private bool ShowServicesDropdown = false;
     private bool _isInitialized = false;
+    private bool IsLoaded = false;
 
     private List<RoomCard> Rooms = new();
     private List<Service> AvailableServices = new();
@@ -506,7 +502,8 @@
             
             // Group by ServiceCategoryId
             ServiceCategoryInventoryCache = categoryInventory
-                .GroupBy(i => i.ServiceCategoryId.Value)
+                .Where(i => i.ServiceCategoryId.HasValue)
+                .GroupBy(i => i.ServiceCategoryId!.Value)
                 .ToDictionary(g => g.Key, g => g.ToList());
         }
         catch (Exception ex)
@@ -543,6 +540,7 @@
 
     private async Task LoadRoomsFromView()
     {
+        IsLoaded = false;
         Rooms.Clear();
 
         try
@@ -565,6 +563,10 @@
             await SafeJsInvoke("console.error", "Error loading rooms: " + ex.Message);
             Rooms = GenerateSampleRooms();
             StateHasChanged();
+        }
+        finally
+        {
+            IsLoaded = true;
         }
     }
 
@@ -758,9 +760,9 @@
         };
     }
 
-    private string GetStatusBadgeClass(string status)
+    private string GetStatusBadgeClass(string? status)
     {
-        return status switch
+        return (status ?? "Available") switch
         {
             "Occupied" => "badge-occupied",
             "Available" => "badge-available",
@@ -1558,7 +1560,7 @@
                                 .Where(p => p.BillId == bill.BillId && p.PaymentStatus == "Completed")
                                 .FirstOrDefaultAsync();
 
-                            Payment payment = null;
+                            Payment? payment = null;
                             if (existingPayment == null)
                             {
                                 var currentUserId = GetCurrentUserId();
@@ -1724,9 +1726,12 @@
             }
 
             var addedAmount = AvailableServices.Where(s => AddServiceSelection.Contains(s.ServiceId)).Sum(s => s.StandardPrice);
-            SelectedRoom.ServiceCharge += addedAmount;
-            SelectedRoom.TaxAmount = Math.Round((SelectedRoom.RoomCharge + SelectedRoom.ServiceCharge) * 0.12m, 2);
-            SelectedRoom.TotalDue = SelectedRoom.RoomCharge + SelectedRoom.ServiceCharge + SelectedRoom.TaxAmount;
+            if (SelectedRoom != null)
+            {
+                SelectedRoom.ServiceCharge += addedAmount;
+                SelectedRoom.TaxAmount = Math.Round((SelectedRoom.RoomCharge + SelectedRoom.ServiceCharge) * 0.12m, 2);
+                SelectedRoom.TotalDue = SelectedRoom.RoomCharge + SelectedRoom.ServiceCharge + SelectedRoom.TaxAmount;
+            }
 
             ShowAddServiceModal = false;
             await SafeJsInvoke("alert", "Services added successfully!");
@@ -1801,5 +1806,135 @@
         font-size: 0.85rem;
         font-weight: 500;
         margin-top: auto;
+    }
+
+    /* Service selector */
+    .service-picker {
+        position: relative;
+        width: 100%;
+    }
+
+    .service-toggle {
+        width: 100%;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 14px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        background: white;
+        font-weight: 600;
+        color: #0f172a;
+        cursor: pointer;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    .service-toggle .caret {
+        font-size: 0.8rem;
+        color: #94a3b8;
+    }
+
+    .service-toggle:hover {
+        border-color: #0f766e;
+        box-shadow: 0 0 0 3px rgba(15,118,110,0.08);
+    }
+
+    .service-dropdown {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+        max-height: 360px;
+        overflow-y: auto;
+        z-index: 50;
+    }
+
+    .service-category {
+        padding: 10px 14px;
+        background: #f8fafc;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #0f766e;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .service-item {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 12px 14px;
+        border-bottom: 1px solid #f1f5f9;
+        cursor: pointer;
+        transition: background 0.12s ease;
+    }
+
+    .service-item input {
+        margin-top: 3px;
+    }
+
+    .service-item:hover {
+        background: #f8fafc;
+    }
+
+    .service-item.selected {
+        background: #eef2ff;
+    }
+
+    .service-item.warning {
+        background: #fef3c7;
+    }
+
+    .service-main {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .service-name {
+        font-weight: 600;
+        color: #0f172a;
+    }
+
+    .service-flag {
+        margin-left: 8px;
+        font-size: 0.75rem;
+        color: #d97706;
+        font-weight: 700;
+    }
+
+    .service-tags {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        white-space: nowrap;
+    }
+
+    .service-price {
+        color: #334155;
+        font-weight: 700;
+    }
+
+    .badge {
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .badge-inventory {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .service-empty {
+        padding: 12px 14px;
+        color: #94a3b8;
+        font-size: 0.9rem;
     }
 </style>

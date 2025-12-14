@@ -45,8 +45,7 @@
         <div class="user-toolbar">
             <div class="toolbar-left">
                 <div class="toolbar-search" style="position: relative;">
-                    <input type="text" placeholder="Search by guest or invoice ID..." @bind="SearchText" @bind:event="oninput" style="padding-left: 40px; width: 100%;" />
-                    <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; fill: #888;" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    <input type="text" placeholder="Search by guest or invoice ID..." @bind="SearchText" @bind:event="oninput" style="width: 100%;" />
                 </div>
                 <select class="filter-select" @bind="StatusFilter">
                     <option value="">All Status</option>
@@ -423,18 +422,18 @@
         {
             var bills = await _context.Bills
                 .Include(b => b.BillDetails)
-                .Include(b => b.Reservation)
-                .ThenInclude(r => r.Guest)
-                .Include(b => b.Reservation)
-                .ThenInclude(r => r.ReservedRooms)
+                .Include(b => b.Reservation!)
+                .ThenInclude(r => r!.Guest)
+                .Include(b => b.Reservation!)
+                .ThenInclude(r => r!.ReservedRooms)
                 .ThenInclude(rr => rr.Room)
                 .ToListAsync();
 
-            Invoices = bills.Select(b => new Invoice
+            Invoices = bills.Where(b => b.Reservation != null).Select(b => new Invoice
             {
                 Id = b.BillId,
                 GuestName = b.Reservation?.Guest != null ? $"{b.Reservation.Guest.FirstName} {b.Reservation.Guest.LastName}" : "Unknown Guest",
-                RoomNumber = b.Reservation?.ReservedRooms.FirstOrDefault()?.Room?.RoomNumber ?? "N/A",
+                RoomNumber = b.Reservation?.ReservedRooms?.FirstOrDefault()?.Room?.RoomNumber ?? "N/A",
                 CheckInDate = b.Reservation?.CreatedDate ?? DateTime.MinValue,
                 CheckOutDate = (b.Reservation?.CreatedDate ?? DateTime.Now).AddDays(1),
                 Subtotal = b.SubtotalAmount ?? 0,

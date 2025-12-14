@@ -21,7 +21,7 @@ namespace HestiaLink.Services
         #region Room Operations
 
         /// <summary>
-        /// Gets all rooms that require cleaning (Status = 'For Cleaning')
+        /// Gets all rooms that require cleaning (Status = 'For Cleaning' or legacy 'Dirty')
         /// </summary>
         public async Task<List<Room>> GetRoomsForCleaningAsync()
         {
@@ -30,7 +30,7 @@ namespace HestiaLink.Services
                 return await _context.Rooms
                     .AsNoTracking()
                     .Include(r => r.RoomType)
-                    .Where(r => r.Status == "For Cleaning")
+                    .Where(r => r.Status == "For Cleaning" || r.Status == "Dirty")
                     .OrderBy(r => r.RoomNumber)
                     .ToListAsync();
             }
@@ -52,13 +52,13 @@ namespace HestiaLink.Services
                     await conn.OpenAsync();
 
                 using var cmd = conn.CreateCommand();
-                cmd.CommandText = @"
-                    SELECT r.RoomID, r.RoomNumber, r.Floor, r.Status, r.RoomTypeID,
-                           rt.TypeName
-                    FROM Room r
-                    LEFT JOIN RoomType rt ON r.RoomTypeID = rt.RoomTypeID
-                    WHERE r.Status = 'For Cleaning'
-                    ORDER BY r.RoomNumber";
+                  cmd.CommandText = @"
+                      SELECT r.RoomID, r.RoomNumber, r.Floor, r.Status, r.RoomTypeID,
+                          rt.TypeName
+                      FROM Room r
+                      LEFT JOIN RoomType rt ON r.RoomTypeID = rt.RoomTypeID
+                      WHERE r.Status IN ('For Cleaning', 'Dirty')
+                      ORDER BY r.RoomNumber";
 
                 using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
@@ -115,9 +115,19 @@ namespace HestiaLink.Services
         {
             try
             {
-                // Use raw SQL to avoid any column issues
+                // First, try to find and detach any tracked instance of this room
+                var trackedRoom = _context.ChangeTracker.Entries<Room>()
+                    .FirstOrDefault(e => e.Entity.RoomID == roomId);
+                
+                if (trackedRoom != null)
+                {
+                    _context.Entry(trackedRoom.Entity).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
+                }
+
+                // Use raw SQL to update
                 var sql = "UPDATE Room SET Status = {0} WHERE RoomID = {1}";
                 var result = await _context.Database.ExecuteSqlRawAsync(sql, newStatus, roomId);
+                
                 return result > 0;
             }
             catch (Exception ex)
@@ -309,6 +319,7 @@ namespace HestiaLink.Services
                     roomCmd.Parameters.Add(roomIdParam);
 
                     string? roomNumber = null;
+                    string roomStatus = string.Empty;
                     using (var reader = await roomCmd.ExecuteReaderAsync())
                     {
                         if (!await reader.ReadAsync())
@@ -316,13 +327,28 @@ namespace HestiaLink.Services
                             transaction.Rollback();
                             return (false, "Room not found", null);
                         }
-                        var status = reader.GetString(reader.GetOrdinal("Status"));
-                        if (status != "For Cleaning")
-                        {
-                            transaction.Rollback();
-                            return (false, "Room is not marked for cleaning", null);
-                        }
+
+                        roomStatus = reader.GetString(reader.GetOrdinal("Status"));
                         roomNumber = reader.GetString(reader.GetOrdinal("RoomNumber"));
+                    }
+
+                    var isCleaningStatus = roomStatus == "For Cleaning" || roomStatus == "Dirty";
+                    if (!isCleaningStatus)
+                    {
+                        transaction.Rollback();
+                        return (false, "Room is not marked for cleaning", null);
+                    }
+
+                    if (roomStatus == "Dirty")
+                    {
+                        using var normalizeCmd = conn.CreateCommand();
+                        normalizeCmd.Transaction = transaction;
+                        normalizeCmd.CommandText = "UPDATE Room SET Status = 'For Cleaning' WHERE RoomID = @RoomID";
+                        var normalizeParam = normalizeCmd.CreateParameter();
+                        normalizeParam.ParameterName = "@RoomID";
+                        normalizeParam.Value = roomId;
+                        normalizeCmd.Parameters.Add(normalizeParam);
+                        await normalizeCmd.ExecuteNonQueryAsync();
                     }
 
                     // Validate user
@@ -475,8 +501,8 @@ namespace HestiaLink.Services
             {
                 return await _context.CleaningTasks
                     .AsNoTracking()
-                    .Include(t => t.Room)
-                        .ThenInclude(r => r.RoomType)
+                    .Include(t => t.Room!)
+                        .ThenInclude(r => r!.RoomType)
                     .Include(t => t.AssignedUser)
                     .Where(t => t.Status == "Assigned" || t.Status == "In Progress")
                     .OrderByDescending(t => t.AssignedDate)
@@ -610,8 +636,8 @@ namespace HestiaLink.Services
             {
                 var query = _context.CleaningTasks
                     .AsNoTracking()
-                    .Include(t => t.Room)
-                        .ThenInclude(r => r.RoomType)
+                    .Include(t => t.Room!)
+                        .ThenInclude(r => r!.RoomType)
                     .Where(t => t.UserID == userId);
 
                 if (activeOnly)
@@ -758,8 +784,8 @@ namespace HestiaLink.Services
             {
                 return await _context.CleaningTasks
                     .AsNoTracking()
-                    .Include(t => t.Room)
-                        .ThenInclude(r => r.RoomType)
+                    .Include(t => t.Room!)
+                        .ThenInclude(r => r!.RoomType)
                     .Where(t => t.UserID == userId && t.Status == "Completed")
                     .OrderByDescending(t => t.CompletedDate)
                     .ToListAsync();
@@ -1085,7 +1111,7 @@ namespace HestiaLink.Services
                 using var roomCmd = conn.CreateCommand();
                 roomCmd.CommandText = @"
                     SELECT 
-                        SUM(CASE WHEN Status = 'For Cleaning' THEN 1 ELSE 0 END) AS ForCleaning,
+                        SUM(CASE WHEN Status IN ('For Cleaning', 'Dirty') THEN 1 ELSE 0 END) AS ForCleaning,
                         SUM(CASE WHEN Status = 'Maintenance' THEN 1 ELSE 0 END) AS Maintenance
                     FROM Room";
                 

@@ -1,9 +1,10 @@
-﻿@page "/hr/attendance"
+@page "/hr/attendance"
 @using HestiaLink.Data
 @using HestiaLink.Models
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.EntityFrameworkCore.Infrastructure
 @using AttendanceRecord = HestiaLink.Models.Attendance
-@inject HestiaLinkContext Context
+@inject IDbContextFactory<HestiaLinkContext> ContextFactory
 @inject IJSRuntime JSRuntime
 @layout MainLayout
 
@@ -11,7 +12,7 @@
     <header class="page-topbar">
         <div>
             <h1>Attendance Management</h1>
-            <span class="page-topbar-subtitle">@SelectedDate.ToString("dddd, MMMM dd, yyyy")</span>
+            <span class="page-topbar-subtitle">@RangeLabel</span>
         </div>
         <UserDropdown />
     </header>
@@ -45,10 +46,21 @@
         <div class="toolbar-left">
             <div class="toolbar-search">
                 <input type="text" placeholder="Search by name or ID..." @bind="SearchText" @oninput="OnSearchChanged" />
-                <span class="search-icon"></span>
             </div>
-            <input type="date" class="filter-select" value="@SelectedDate.ToString("yyyy-MM-dd")"
-                   style="padding: 10px 16px;" @onchange="OnDateChanged" />
+
+            <select class="filter-select" value="@SelectedRange" @onchange="OnRangeChanged">
+                <option value="Today">Today</option>
+                <option value="Week">This Week</option>
+                <option value="Month">This Month</option>
+                <option value="Year">This Year</option>
+                <option value="Custom">Custom</option>
+            </select>
+            <span class="range-note">@RangeLabel</span>
+
+            <input type="date" class="filter-select" value="@StartDate.ToString("yyyy-MM-dd")"
+                   style="padding: 10px 16px;" @onchange="OnStartDateChanged" />
+            <input type="date" class="filter-select" value="@EndDate.ToString("yyyy-MM-dd")"
+                   style="padding: 10px 16px;" @onchange="OnEndDateChanged" />
         </div>
         <div>
             <button class="btn-primary" @onclick="LoadToday">Today</button>
@@ -291,7 +303,7 @@
                                     <td>@(record.ActualCheckOut?.ToString("hh:mm tt") ?? "--:--")</td>
                                     <td style="font-weight:700; color:#10b981;">@((record.RegularHours ?? 0 + record.OvertimeHours ?? 0).ToString("F1"))h</td>
                                     <td>
-                                        <span class="badge-@record.AttendanceStatus.ToLower().Replace(" ", "-")">@record.AttendanceStatus</span>
+                                        <span class="badge-@(record.AttendanceStatus?.ToLower().Replace(" ", "-") ?? "unknown")">@(record.AttendanceStatus ?? "Unknown")</span>
                                     </td>
                                 </tr>
                             }
@@ -361,6 +373,11 @@
         margin-top: auto;
     }
 
+    .range-note {
+        font-size: 0.9rem;
+        color: #475569;
+    }
+
     .summary-card-active {
         border: 2px solid #0f766e;
         background: #f0fdfa;
@@ -411,6 +428,9 @@
 
 @code {
     private string SearchText = "";
+    private string SelectedRange = "Today";
+    private DateTime StartDate = DateTime.Today;
+    private DateTime EndDate = DateTime.Today;
     private DateTime SelectedDate = DateTime.Today;
     private bool ShowShiftModal = false;
     private bool ShowHistoryModal = false;
@@ -441,7 +461,12 @@
     private int OnLeaveCount = 0;
     private int LateCount = 0;
 
-    protected override async Task OnInitializedAsync() => await LoadData();
+    protected override async Task OnInitializedAsync()
+    {
+        UpdateRangeDates();
+        SelectedDate = EndDate;
+        await LoadData();
+    }
 
     private async Task LoadData()
     {
@@ -450,18 +475,19 @@
             HasError = false;
             ErrorMessage = string.Empty;
 
-            Employees = await Context.Employees
+            using var context = ContextFactory.CreateDbContext();
+            Employees = await context.Employees
                 .Include(e => e.Position).ThenInclude(p => p!.Department)
                 .Where(e => e.Status == "Active")
                 .AsNoTracking().OrderBy(e => e.FirstName).ToListAsync();
 
-            Schedules = await Context.Schedules
+            Schedules = await context.Schedules
                 .Where(s => s.ScheduleDate == DateOnly.FromDateTime(SelectedDate) && s.IsActive == true)
                 .AsNoTracking().ToListAsync();
 
             var scheduleIds = Schedules.Select(s => s.ScheduleId).ToList();
 
-            Attendances = await Context.Attendances
+            Attendances = await context.Attendances
                 .Where(a => a.AttendanceDate == DateOnly.FromDateTime(SelectedDate) && scheduleIds.Contains(a.ScheduleId))
                 .Include(a => a.Schedule).AsNoTracking().ToListAsync();
 
@@ -501,8 +527,17 @@
 
     private async Task RetryLoad() { IsLoaded = false; StateHasChanged(); await Task.Delay(500); await LoadData(); }
     private void OnSearchChanged(ChangeEventArgs e) => SearchText = e.Value?.ToString() ?? string.Empty;
-    private async Task OnDateChanged(ChangeEventArgs e) { if (DateTime.TryParse(e.Value?.ToString(), out var date)) { SelectedDate = date; await LoadData(); } }
-    private async Task LoadToday() { SelectedDate = DateTime.Today; await LoadData(); }
+    private async Task OnDateChanged(ChangeEventArgs e) { if (DateTime.TryParse(e.Value?.ToString(), out var date)) { SelectedDate = date; StartDate = date; EndDate = date; SelectedRange = "Custom"; await LoadData(); } }
+    private async Task OnStartDateChanged(ChangeEventArgs e) { if (DateTime.TryParse(e.Value?.ToString(), out var date)) { StartDate = date; if (StartDate > EndDate) EndDate = StartDate; SelectedRange = "Custom"; SelectedDate = EndDate; await LoadData(); } }
+    private async Task OnEndDateChanged(ChangeEventArgs e) { if (DateTime.TryParse(e.Value?.ToString(), out var date)) { EndDate = date; if (EndDate < StartDate) StartDate = EndDate; SelectedRange = "Custom"; SelectedDate = EndDate; await LoadData(); } }
+    private async Task OnRangeChanged(ChangeEventArgs e)
+    {
+        SelectedRange = e.Value?.ToString() ?? "Today";
+        UpdateRangeDates();
+        SelectedDate = EndDate;
+        await LoadData();
+    }
+    private async Task LoadToday() { SelectedRange = "Today"; UpdateRangeDates(); SelectedDate = EndDate; await LoadData(); }
 
     private List<Employee> FilteredEmployees
     {
@@ -546,6 +581,41 @@
             return list.OrderBy(e => e.FirstName).ToList();
         }
     }
+
+    private void UpdateRangeDates()
+    {
+        var today = DateTime.Today;
+        switch (SelectedRange)
+        {
+            case "Week":
+                EndDate = today;
+                StartDate = today.AddDays(-6);
+                break;
+            case "Month":
+                EndDate = today;
+                StartDate = new DateTime(today.Year, today.Month, 1);
+                break;
+            case "Year":
+                EndDate = today;
+                StartDate = new DateTime(today.Year, 1, 1);
+                break;
+            case "Today":
+                StartDate = today;
+                EndDate = today;
+                break;
+            default:
+                if (StartDate > EndDate)
+                {
+                    EndDate = StartDate;
+                }
+                SelectedRange = "Custom";
+                break;
+        }
+    }
+
+    private string RangeLabel => StartDate.Date == EndDate.Date
+        ? StartDate.ToString("dddd, MMM dd, yyyy")
+        : $"{StartDate:MMM dd, yyyy} - {EndDate:MMM dd, yyyy}";
 
     private void OpenShiftModal(Employee emp, Schedule? schedule)
     {
@@ -607,14 +677,15 @@
         if (SelectedEmployee == null || string.IsNullOrEmpty(SelectedShiftType)) return;
         try
         {
-            var existingSchedule = await Context.Schedules
+            using var context = ContextFactory.CreateDbContext();
+            var existingSchedule = await context.Schedules
                 .FirstOrDefaultAsync(s => s.EmployeeId == SelectedEmployee.EmployeeId && s.ScheduleDate == DateOnly.FromDateTime(ShiftDate) && s.IsActive == true);
 
             if (existingSchedule != null)
             {
                 existingSchedule.IsActive = false;
                 existingSchedule.UpdatedAt = DateTime.Now;
-                Context.Schedules.Update(existingSchedule);
+                context.Schedules.Update(existingSchedule);
             }
 
             var newSchedule = new Schedule
@@ -628,14 +699,14 @@
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
-            Context.Schedules.Add(newSchedule);
-            await Context.SaveChangesAsync();
+            context.Schedules.Add(newSchedule);
+            await context.SaveChangesAsync();
 
             if (existingSchedule != null)
             {
-                var attendancesToUpdate = await Context.Attendances.Where(a => a.ScheduleId == existingSchedule.ScheduleId).ToListAsync();
+                var attendancesToUpdate = await context.Attendances.Where(a => a.ScheduleId == existingSchedule.ScheduleId).ToListAsync();
                 foreach (var att in attendancesToUpdate) { att.ScheduleId = newSchedule.ScheduleId; att.UpdatedAt = DateTime.Now; }
-                await Context.SaveChangesAsync();
+                await context.SaveChangesAsync();
             }
 
             await LoadData();
@@ -649,14 +720,15 @@
     {
         try
         {
-            var existingAttendance = await Context.Attendances.FirstOrDefaultAsync(a => a.ScheduleId == schedule.ScheduleId);
+            using var context = ContextFactory.CreateDbContext();
+            var existingAttendance = await context.Attendances.FirstOrDefaultAsync(a => a.ScheduleId == schedule.ScheduleId);
 
             if (existingAttendance != null)
             {
                 existingAttendance.ActualCheckIn = DateTime.Now;
                 existingAttendance.AttendanceStatus = "Present";
                 existingAttendance.UpdatedAt = DateTime.Now;
-                Context.Attendances.Update(existingAttendance);
+                context.Attendances.Update(existingAttendance);
             }
             else
             {
@@ -669,9 +741,9 @@
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
                 };
-                Context.Attendances.Add(newAttendance);
+                context.Attendances.Add(newAttendance);
             }
-            await Context.SaveChangesAsync();
+            await context.SaveChangesAsync();
             await LoadData();
             await JSRuntime.InvokeVoidAsync("alert", $"{emp.FirstName} checked in successfully");
         }
@@ -682,7 +754,8 @@
     {
         try
         {
-            var existing = await Context.Attendances.FindAsync(attendance.AttendanceId);
+            using var context = ContextFactory.CreateDbContext();
+            var existing = await context.Attendances.FindAsync(attendance.AttendanceId);
             if (existing != null)
             {
                 existing.ActualCheckOut = DateTime.Now;
@@ -693,8 +766,8 @@
                     existing.OvertimeHours = (decimal)Math.Max(hours - 8, 0);
                 }
                 existing.UpdatedAt = DateTime.Now;
-                Context.Attendances.Update(existing);
-                await Context.SaveChangesAsync();
+                context.Attendances.Update(existing);
+                await context.SaveChangesAsync();
                 await LoadData();
                 await JSRuntime.InvokeVoidAsync("alert", "Check-out recorded");
             }
@@ -709,8 +782,9 @@
             var emp = Employees.FirstOrDefault(e => e.EmployeeId == employeeId);
             if (emp == null) return;
             HistoryEmployeeName = $"{emp.FirstName} {emp.LastName}";
-            var scheduleIds = await Context.Schedules.Where(s => s.EmployeeId == employeeId).Select(s => s.ScheduleId).ToListAsync();
-            HistoryRecords = await Context.Attendances
+            using var context = ContextFactory.CreateDbContext();
+            var scheduleIds = await context.Schedules.Where(s => s.EmployeeId == employeeId).Select(s => s.ScheduleId).ToListAsync();
+            HistoryRecords = await context.Attendances
                 .Where(a => scheduleIds.Contains(a.ScheduleId))
                 .Include(a => a.Schedule)
                 .OrderByDescending(a => a.AttendanceDate).Take(30).AsNoTracking().ToListAsync();
@@ -721,6 +795,6 @@
 
     private void CloseHistoryModal() { ShowHistoryModal = false; HistoryRecords = new(); }
     private string FormatTime(TimeOnly time) => DateTime.Today.Add(time.ToTimeSpan()).ToString("hh:mm tt");
-    private string GetStatusText(AttendanceRecord? attendance, Schedule? schedule) => attendance != null ? attendance.AttendanceStatus : (schedule != null ? "Pending" : "No Shift");
-    private string GetStatusClass(AttendanceRecord? attendance, Schedule? schedule) => attendance != null ? attendance.AttendanceStatus.ToLower().Replace(" ", "-") : (schedule != null ? "pending" : "no-shift");
+    private string GetStatusText(AttendanceRecord? attendance, Schedule? schedule) => attendance?.AttendanceStatus ?? (schedule != null ? "Pending" : "No Shift");
+    private string GetStatusClass(AttendanceRecord? attendance, Schedule? schedule) => (attendance?.AttendanceStatus?.ToLower().Replace(" ", "-") ?? (schedule != null ? "pending" : "no-shift")) ?? "no-shift";
 }

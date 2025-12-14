@@ -1,4 +1,4 @@
-﻿@page "/finance/payment-processing"
+@page "/finance/payment-processing"
 @layout MainLayout
 @using HestiaLink.Data
 @using HestiaLink.Models
@@ -41,7 +41,6 @@
             <div class="toolbar-left">
                 <div class="toolbar-search">
                     <input type="text" placeholder="Search by guest or invoice..." @bind="SearchText" @bind:event="oninput" />
-                    <span class="search-icon">🔍</span>
                 </div>
                 <select class="filter-select" @bind="PaymentStatusFilter">
                     <option value="">All Status</option>
@@ -418,16 +417,16 @@
         try 
         {
             var payments = await _context.Payments
-                .Include(p => p.Bill)
-                .ThenInclude(b => b.Reservation)
-                .ThenInclude(r => r.Guest)
-                .Include(p => p.Bill)
-                .ThenInclude(b => b.Reservation)
-                .ThenInclude(r => r.ReservedRooms)
+                .Include(p => p.Bill!)
+                .ThenInclude(b => b!.Reservation!)
+                .ThenInclude(r => r!.Guest)
+                .Include(p => p.Bill!)
+                .ThenInclude(b => b!.Reservation!)
+                .ThenInclude(r => r!.ReservedRooms)
                 .ThenInclude(rr => rr.Room)
                 .ToListAsync();
 
-            Payments = payments.Select(p => new PaymentViewModel
+            Payments = payments.Where(p => p.Bill != null).Select(p => new PaymentViewModel
             {
                 PaymentId = p.PaymentId,
                 PaymentDate = p.PaymentDate ?? DateTime.Now,
@@ -464,10 +463,10 @@
         if (NewPayment.InvoiceId == 0) return;
 
         var bill = await _context.Bills
-            .Include(b => b.Reservation)
-            .ThenInclude(r => r.Guest)
-            .Include(b => b.Reservation)
-            .ThenInclude(r => r.ReservedRooms)
+            .Include(b => b.Reservation!)
+            .ThenInclude(r => r!.Guest)
+            .Include(b => b.Reservation!)
+            .ThenInclude(r => r!.ReservedRooms)
             .ThenInclude(rr => rr.Room)
             .FirstOrDefaultAsync(b => b.BillId == NewPayment.InvoiceId);
 

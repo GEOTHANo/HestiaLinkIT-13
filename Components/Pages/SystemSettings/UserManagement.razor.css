@@ -1,4 +1,4 @@
-﻿/* User Grid Layout */
+/* User Grid Layout */
 .user-grid-container {
     padding: 20px 0;
 }
@@ -216,17 +216,14 @@
 
     .toolbar-search input {
         width: 100%;
-        padding: 10px 16px 10px 40px;
+        padding: 10px 16px;
         border: 1px solid #d1d5db;
         border-radius: 8px;
         font-size: 0.9rem;
     }
 
 .search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
+    display: none;
     color: #6b7280;
 }
 
@@ -384,35 +381,6 @@
     .form-grid {
         grid-template-columns: 1fr;
     }
-}
-
-/* Page Wrapper Styles */
-.page-wrapper {
-    min-height: 100vh;
-    background: #f8fafc;
-}
-
-.page-topbar {
-    background: white;
-    padding: 24px;
-    border-bottom: 1px solid #e5e7eb;
-    margin-bottom: 0;
-}
-
-    .page-topbar h1 {
-        margin: 0 0 4px 0;
-        font-size: 1.875rem;
-        font-weight: 700;
-        color: #111827;
-    }
-
-.page-topbar-subtitle {
-    color: #6b7280;
-    font-size: 0.875rem;
-}
-
-.page-content {
-    padding: 24px;
 }
 
 /* Panel Card Styles */

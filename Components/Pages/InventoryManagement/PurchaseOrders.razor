@@ -1,4 +1,4 @@
-﻿@page "/inventory/purchase-orders"
+@page "/inventory/purchase-orders"
 @using Microsoft.EntityFrameworkCore
 @using HestiaLink.Models
 @using HestiaLink.Data
@@ -52,7 +52,6 @@
             <div class="toolbar-left">
                 <div class="toolbar-search">
                     <input type="text" placeholder="Search by PO #, Item, or Supplier..." @bind="SearchText" @oninput="OnSearchChanged" />
-                    <span class="search-icon"></span>
                 </div>
                 <select class="filter-select" @bind="FilterStatus">
                     <option value="">All Status</option>
@@ -101,7 +100,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var po in FilteredPurchases)
+                                @foreach (var po in PagedPurchases)
                                 {
                                     <tr>
                                         <td style="font-family:monospace; font-weight:700;">@po.PurchaseNumber</td>
@@ -127,28 +126,35 @@
                                         </td>
                                         <td>@(po.ReceivedDate?.ToString("MM/dd/yyyy") ?? "-")</td>
                                         <td style="text-align:center;">
-                                            <div style="display:flex; justify-content:center; gap:8px; align-items:center;">
-                                                @if (po.PurchaseStatus == "PENDING")
-                                                {
-                                                    <button class="btn-icon-action receive" @onclick="() => ReceivePurchase(po)" title="Mark as Received">
-                                                        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                                                    </button>
-                                                    <button class="btn-icon-action edit" @onclick="() => OpenEditModal(po)" title="Edit">
-                                                        <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                                                    </button>
-                                                    <button class="btn-icon-action cancel" @onclick="() => CancelPurchaseConfirm(po)" title="Cancel Order">
-                                                        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                                                    </button>
-                                                }
-                                                <button class="btn-icon-action view" @onclick="() => OpenViewModal(po)" title="View Details">
-                                                    <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                            <div class="action-menu">
+                                                <button class="btn-icon-action action-toggle" @onclick="() => ToggleActions(po.PurchaseID)" title="Actions">
+                                                    <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
                                                 </button>
+                                                @if (OpenActionMenuId == po.PurchaseID)
+                                                {
+                                                    <div class="action-menu-dropdown">
+                                                        @if (po.PurchaseStatus == "PENDING")
+                                                        {
+                                                            <button @onclick="() => { OpenActionMenuId = null; ReceivePurchase(po); }">Mark as Received</button>
+                                                            <button @onclick="() => { OpenActionMenuId = null; OpenEditModal(po); }">Edit</button>
+                                                            <button @onclick="() => { OpenActionMenuId = null; CancelPurchaseConfirm(po); }">Cancel Order</button>
+                                                        }
+                                                        <button @onclick="() => { OpenActionMenuId = null; OpenViewModal(po); }">View Details</button>
+                                                    </div>
+                                                }
                                             </div>
                                         </td>
                                     </tr>
                                 }
                             </tbody>
                         </table>
+
+                        <Pagination
+                            TotalItems="@FilteredPurchases.Count"
+                            ItemsPerPage="@ItemsPerPage"
+                            CurrentPage="@Math.Clamp(CurrentPage, 1, TotalPages)"
+                            OnPageChanged="@HandlePageChanged"
+                            OnItemsPerPageChangedCallback="@HandleItemsPerPageChanged" />
                     }
                     else
                     {
@@ -429,6 +435,9 @@
     // State
     private string SearchText = "";
     private string FilterStatus = "";
+    private int CurrentPage = 1;
+    private int ItemsPerPage = 10;
+    private int? OpenActionMenuId = null;
     private bool ShowModal = false;
     private bool ShowViewModal = false;
     private bool ShowLowStockModal = false;
@@ -472,6 +481,9 @@
             Suppliers = await InventoryService.GetActiveSuppliersAsync();
             LowStockItems = await InventoryService.GetItemsNeedingPurchaseAsync();
 
+            CurrentPage = 1;
+            OpenActionMenuId = null;
+
             IsLoaded = true;
         }
         catch (Exception ex)
@@ -485,6 +497,7 @@
     private void OnSearchChanged(ChangeEventArgs e)
     {
         SearchText = e.Value?.ToString() ?? string.Empty;
+        CurrentPage = 1;
     }
 
     private List<InventoryPurchase> FilteredPurchases
@@ -511,6 +524,35 @@
 
             return items.OrderByDescending(p => p.PurchaseDate).ToList();
         }
+    }
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredPurchases.Count / (double)ItemsPerPage));
+
+    private IEnumerable<InventoryPurchase> PagedPurchases
+    {
+        get
+        {
+            var safePage = Math.Clamp(CurrentPage, 1, TotalPages);
+            return FilteredPurchases
+                .Skip((safePage - 1) * ItemsPerPage)
+                .Take(ItemsPerPage);
+        }
+    }
+
+    private void HandlePageChanged(int page)
+    {
+        CurrentPage = Math.Clamp(page, 1, TotalPages);
+    }
+
+    private void HandleItemsPerPageChanged(int size)
+    {
+        ItemsPerPage = size;
+        CurrentPage = 1;
+    }
+
+    private void ToggleActions(int purchaseId)
+    {
+        OpenActionMenuId = OpenActionMenuId == purchaseId ? null : purchaseId;
     }
 
     // Modal handlers
@@ -995,6 +1037,45 @@
 
     .btn-icon-action.cancel:hover {
         background: #0b4b59;
+    }
+
+    /* Compact action dropdown */
+    .action-menu {
+        position: relative;
+        display: inline-block;
+    }
+
+    .action-toggle {
+        background: #0f766e;
+    }
+
+    .action-menu-dropdown {
+        position: absolute;
+        right: 0;
+        top: 40px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        box-shadow: 0 12px 30px rgba(15, 118, 110, 0.15);
+        padding: 8px 0;
+        min-width: 180px;
+        z-index: 5;
+    }
+
+    .action-menu-dropdown button {
+        width: 100%;
+        text-align: left;
+        background: none;
+        border: none;
+        padding: 10px 14px;
+        font-size: 0.95rem;
+        color: #0f172a;
+        cursor: pointer;
+    }
+
+    .action-menu-dropdown button:hover {
+        background: #ecfeff;
+        color: #0f766e;
     }
 
     /* Modal */
