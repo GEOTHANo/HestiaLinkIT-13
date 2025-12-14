@@ -73,7 +73,7 @@
                         🔧 Maintenance (@RoomsUnderMaintenance.Count)
                     </button>
                 </div>
-                <button class="btn-create" @onclick="LoadData">🔄 Refresh</button>
+                <button class="btn-create" @onclick="LoadData">Refresh</button>
             </div>
 
             <!-- Tab Content -->
@@ -88,23 +88,23 @@
                 }
                 else
                 {
-                    <div class="cards-grid">
+                    <div class="room-grid">
                         @foreach (var room in RoomsForCleaning)
                         {
-                            <div class="user-card">
-                                <div class="card-top">
-                                    <div class="avatar">@GetAvatarInitials(room.RoomNumber)</div>
-                                    <div class="card-title">Room @room.RoomNumber <span style="font-weight:600; font-size:0.9rem; color:#64748b; margin-left:8px;">(Floor @room.Floor)</span></div>
-                                    <div class="status-badge badge-cleaning">For Cleaning</div>
+                            <div class="room-card">
+                                <div class="room-card-header">
+                                    <div>
+                                        <div class="room-number">Room @room.RoomNumber</div>
+                                        <div class="room-floor">Floor @room.Floor</div>
+                                    </div>
+                                    <span class="chip chip-warning">For Cleaning</span>
                                 </div>
-                                <div class="card-body">
-                                    <div><strong>Type:</strong> @(room.RoomType?.TypeName ?? "Standard")</div>
-                                    <div><strong>Floor:</strong> @room.Floor</div>
+                                <div class="room-meta">
+                                    <div><span class="meta-label">Type:</span> @(room.RoomType?.TypeName ?? "Standard")</div>
+                                    <div><span class="meta-label">Floor:</span> @room.Floor</div>
                                 </div>
-                                <div class="card-actions">
-                                    <button class="btn-primary" @onclick="() => OpenAssignModal(room)">
-                                        👤 Assign Staff
-                                    </button>
+                                <div class="room-actions">
+                                    <button class="btn-room-primary" @onclick="() => OpenAssignModal(room)">Assign Staff</button>
                                 </div>
                             </div>
                         }
@@ -122,30 +122,28 @@
                 }
                 else
                 {
-                    <div class="cards-grid">
+                    <div class="room-grid">
                         @foreach (var task in ActiveTasks)
                         {
-                            <div class="user-card">
-                                <div class="card-top">
-                                    <div class="avatar">@GetAvatarInitials(task.Room?.RoomNumber ?? "NA")</div>
-                                    <div class="card-title">Room @(task.Room?.RoomNumber ?? "N/A") <span style="font-weight:600; font-size:0.9rem; color:#64748b; margin-left:8px;">(Floor @(task.Room?.Floor ?? 0))</span></div>
-                                    <div class="status-badge @(task.Status == "In Progress" ? "badge-info" : "badge-warning")">
-                                        @task.Status
+                            <div class="room-card">
+                                <div class="room-card-header">
+                                    <div>
+                                        <div class="room-number">Room @(task.Room?.RoomNumber ?? "N/A")</div>
+                                        <div class="room-floor">Floor @(task.Room?.Floor ?? 0)</div>
                                     </div>
+                                    <span class="chip @(task.Status == "In Progress" ? "chip-info" : "chip-warning")">@task.Status</span>
                                 </div>
-                                <div class="card-body">
-                                    <div><strong>Assigned:</strong> @(task.AssignedUser?.Username ?? "Unassigned")</div>
-                                    <div><strong>Type:</strong> @(task.Room?.RoomType?.TypeName ?? "Standard")</div>
-                                    <div><strong>Time:</strong> @task.AssignedDate.ToString("MMM dd, HH:mm")</div>
+                                <div class="room-meta">
+                                    <div><span class="meta-label">Assigned:</span> @(task.AssignedUser?.Username ?? "Unassigned")</div>
+                                    <div><span class="meta-label">Type:</span> @(task.Room?.RoomType?.TypeName ?? "Standard")</div>
+                                    <div><span class="meta-label">Time:</span> @task.AssignedDate.ToString("MMM dd, HH:mm")</div>
                                     @if (!string.IsNullOrEmpty(task.Notes))
                                     {
-                                        <div class="notes-box">📝 @task.Notes</div>
+                                        <div style="margin-top:8px; font-style:italic; color:#64748b;">📝 @task.Notes</div>
                                     }
                                 </div>
-                                <div class="card-actions">
-                                    <button class="btn-success" @onclick="() => AdminCompleteTask(task)">
-                                        ✅ Mark Complete
-                                    </button>
+                                <div class="room-actions">
+                                    <button class="btn-room-primary" @onclick="() => AdminCompleteTask(task)">Mark Complete</button>
                                 </div>
                             </div>
                         }
@@ -163,23 +161,23 @@
                 }
                 else
                 {
-                    <div class="cards-grid">
+                    <div class="room-grid">
                         @foreach (var room in RoomsUnderMaintenance)
                         {
-                            <div class="user-card">
-                                <div class="card-top">
-                                    <div class="avatar avatar-danger">@GetAvatarInitials(room.RoomNumber)</div>
-                                    <div class="card-title">Room @room.RoomNumber <span style="font-weight:600; font-size:0.9rem; color:#64748b; margin-left:8px;">(Floor @room.Floor)</span></div>
-                                    <div class="status-badge badge-danger">Maintenance</div>
+                            <div class="room-card">
+                                <div class="room-card-header">
+                                    <div>
+                                        <div class="room-number">Room @room.RoomNumber</div>
+                                        <div class="room-floor">Floor @room.Floor</div>
+                                    </div>
+                                    <span class="chip chip-danger">Maintenance</span>
                                 </div>
-                                <div class="card-body">
-                                    <div><strong>Type:</strong> @(room.RoomType?.TypeName ?? "Standard")</div>
-                                    <div><strong>Floor:</strong> @room.Floor</div>
+                                <div class="room-meta">
+                                    <div><span class="meta-label">Type:</span> @(room.RoomType?.TypeName ?? "Standard")</div>
+                                    <div><span class="meta-label">Status:</span> Under Maintenance</div>
                                 </div>
-                                <div class="card-actions">
-                                    <button class="btn-info" @onclick="() => ResolveMaintenanceRoom(room)">
-                                        ✅ Resolve Issue
-                                    </button>
+                                <div class="room-actions">
+                                    <button class="btn-room-primary" @onclick="() => ResolveMaintenanceRoom(room)">Resolve Issue</button>
                                 </div>
                             </div>
                         }
@@ -282,16 +280,16 @@
 
     .summary-card {
         background: #e0f2f1; /* Light Cyan/Teal */
-        border-radius: 16px;
-        padding: 24px;
-        border: none;
-        box-shadow: none;
+        border-radius: 12px;
+        padding: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-        height: 160px;
+        justify-content: center;
+        min-height: 120px;
         position: relative;
-        transition: transform 0.2s;
+        transition: transform 0.15s ease;
     }
 
     .summary-card:hover {
@@ -322,6 +320,137 @@
         margin-top: auto;
     }
 
+    /* Cleaning Cards */
+    .room-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 18px;
+    }
+
+    .room-card {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 18px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .room-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 22px rgba(0, 0, 0, 0.08);
+    }
+
+    .room-card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .room-number {
+        font-weight: 800;
+        font-size: 1.2rem;
+        color: #0f172a;
+    }
+
+    .room-floor {
+        color: #475569;
+        font-size: 0.95rem;
+    }
+
+    .chip {
+        padding: 8px 12px;
+        border-radius: 16px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        border: 1px solid transparent;
+    }
+
+    .chip-warning {
+        background: #fef3c7;
+        color: #b45309;
+        border-color: #fcd34d;
+    }
+
+    .chip-available {
+        background: #d1fae5;
+        color: #047857;
+        border-color: #a7f3d0;
+    }
+
+    .chip-info {
+        background: #dbeafe;
+        color: #1e40af;
+        border-color: #bfdbfe;
+    }
+
+    .chip-danger {
+        background: #fef2f2;
+        color: #991b1b;
+        border-color: #fecaca;
+    }
+
+    .room-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        color: #1f2937;
+    }
+
+    .room-meta div {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .meta-label {
+        font-weight: 700;
+        color: #111827;
+        margin-right: 6px;
+    }
+
+    .room-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 8px;
+    }
+
+    .btn-room-primary {
+        flex: 1;
+        background: #008c9e;
+        color: white;
+        padding: 12px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        font-weight: 700;
+        transition: all 0.15s ease;
+    }
+
+    .btn-room-primary:hover {
+        background: #007a8b;
+    }
+
+    .btn-room-neutral {
+        flex: 1;
+        background: #e6e7e9;
+        color: #374151;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid #d1d5db;
+        cursor: pointer;
+        font-weight: 700;
+        transition: all 0.15s ease;
+    }
+
+    .btn-room-neutral:hover {
+        background: #d9dbdf;
+    }
+
     /* Cards Grid - Same as CheckInCheckOut */
     .cards-grid {
         display: grid;
@@ -332,19 +461,18 @@
     .user-card {
         background: white;
         border-radius: 12px;
-        padding: 14px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-        cursor: pointer;
+        padding: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        transition: all 0.2s ease;
     }
 
     .user-card:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         transform: translateY(-2px);
-        transition: all 0.2s ease;
     }
 
     .card-top {
@@ -658,6 +786,7 @@
 
     /* Responsive */
     @@media (max-width: 768px) {
+        .room-grid,
         .cards-grid {
             grid-template-columns: 1fr;
         }
@@ -832,6 +961,70 @@
             else
             {
                 await JSRuntime.InvokeVoidAsync("alert", result.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+        }
+        finally
+        {
+            IsProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task MarkRoomClean(Room room)
+    {
+        if (room == null || IsProcessing) return;
+
+        try
+        {
+            IsProcessing = true;
+            StateHasChanged();
+
+            var success = await HousekeepingService.UpdateRoomStatusAsync(room.RoomID, "Available");
+
+            if (success)
+            {
+                await LoadData();
+                await JSRuntime.InvokeVoidAsync("alert", $"Room {room.RoomNumber} marked clean.");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Failed to update room status.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+        }
+        finally
+        {
+            IsProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task MarkRoomMaintenance(Room room)
+    {
+        if (room == null || IsProcessing) return;
+
+        try
+        {
+            IsProcessing = true;
+            StateHasChanged();
+
+            var success = await HousekeepingService.UpdateRoomStatusAsync(room.RoomID, "Maintenance");
+
+            if (success)
+            {
+                await LoadData();
+                await JSRuntime.InvokeVoidAsync("alert", $"Room {room.RoomNumber} moved to maintenance.");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Failed to update room status.");
             }
         }
         catch (Exception ex)

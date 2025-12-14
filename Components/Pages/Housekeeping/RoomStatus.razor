@@ -1,8 +1,10 @@
 @page "/housekeeping/room-status"
 @using HestiaLink.Data
 @using HestiaLink.Models
+@using HestiaLink.Services
 @using Microsoft.EntityFrameworkCore
 @inject HestiaLinkContext DbContext
+@inject HousekeepingService HousekeepingService
 @inject NavigationManager Navigation
 
 <div class="page-wrapper">
@@ -25,6 +27,7 @@
                     <option value="">All Statuses</option>
                     <option value="Available">Available</option>
                     <option value="Occupied">Occupied</option>
+                    <option value="For Cleaning">For Cleaning</option>
                     <option value="Dirty">Dirty</option>
                     <option value="Maintenance">Maintenance</option>
                 </select>
@@ -57,7 +60,7 @@
                                 Room @room.RoomNumber <span style="font-weight:400; color:#64748b; font-size:0.95rem;">(Floor @room.Floor)</span>
                             </div>
                             <div class="status-badge @GetStatusBadgeClass(room.Status)">
-                                @room.Status.ToUpper()
+                                @(room.Status?.ToUpper() ?? "UNKNOWN")
                             </div>
                         </div>
 
@@ -80,7 +83,7 @@
                             }
                             else if (room.Status == "Available")
                             {
-                                <button class="btn-secondary" style="flex:1; padding: 8px; font-size: 0.85rem;" @onclick="() => MarkDirty(room)">Mark Dirty</button>
+                                <button class="btn-secondary" style="flex:1; padding: 8px; font-size: 0.85rem;" @onclick="() => MarkForCleaning(room)">Mark For Cleaning</button>
                                 <button class="btn-secondary" style="flex:1; padding: 8px; font-size: 0.85rem;" @onclick="() => MarkMaintenance(room)">Maint.</button>
                             }
                             else if (room.Status == "Maintenance")
@@ -117,24 +120,36 @@
 
     private async Task LoadRooms()
     {
-        Rooms = await DbContext.Rooms.Include(r => r.RoomType).ToListAsync();
+        Rooms = await DbContext.Rooms
+            .AsNoTracking()
+            .Include(r => r.RoomType)
+            .ToListAsync();
     }
 
     private async Task UpdateStatus(Room room, string newStatus)
     {
-        room.Status = newStatus;
-        DbContext.Rooms.Update(room);
-        await DbContext.SaveChangesAsync();
-        // Refresh local list if needed, or just let UI update since it's bound
+        if (room == null) return;
+
+        // Use centralized service update to avoid tracking conflicts
+        var success = await HousekeepingService.UpdateRoomStatusAsync(room.RoomID, newStatus);
+
+        if (success)
+        {
+            room.Status = newStatus; // update bound model for immediate UI feedback
+        }
+        else
+        {
+            await LoadRooms(); // fallback refresh if update failed
+        }
     }
 
     private async Task MarkAvailable(Room room) => await UpdateStatus(room, "Available");
-    private async Task MarkDirty(Room room) => await UpdateStatus(room, "Dirty");
+    private async Task MarkForCleaning(Room room) => await UpdateStatus(room, "For Cleaning");
     private async Task MarkMaintenance(Room room) => await UpdateStatus(room, "Maintenance");
 
-    private string GetStatusBadgeClass(string status)
+    private string GetStatusBadgeClass(string? status)
     {
-        return status?.ToLower() switch
+        return (status ?? "available").ToLower() switch
         {
             "available" => "badge-available",
             "occupied" => "badge-occupied",

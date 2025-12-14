@@ -3,7 +3,7 @@
 @using Microsoft.EntityFrameworkCore.Infrastructure
 @inject IDbContextFactory<HestiaLinkContext> ContextFactory
 @inject IJSRuntime JSRuntime
-@layout MainLayout
+@layout HestiaIT13Final.Components.Layout.MainLayout
 
 <div class="page-wrapper">
     <header class="page-topbar">
@@ -105,7 +105,7 @@
                                     TotalItems="@FilteredDepartments.Count" 
                                     ItemsPerPage="@ItemsPerPage"
                                     OnPageChanged="@OnPageChanged"
-                                    OnItemsPerPageChanged="@OnItemsPerPageChanged" />
+                                    OnItemsPerPageChangedCallback="@OnItemsPerPageChanged" />
                     }
                 }
                 else

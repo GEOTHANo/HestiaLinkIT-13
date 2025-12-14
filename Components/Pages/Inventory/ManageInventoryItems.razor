@@ -108,7 +108,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var item in FilteredItems)
+                            @foreach (var item in PagedItems)
                             {
                                 var currentStock = item.CurrentStock ?? 0;
                                 var reorderPoint = item.ReorderPoint ?? 0;
@@ -168,6 +168,13 @@
                             }
                         </tbody>
                     </table>
+
+                    <Pagination
+                        TotalItems="@FilteredItems.Count"
+                        ItemsPerPage="@ItemsPerPage"
+                        CurrentPage="@Math.Clamp(CurrentPage, 1, TotalPages)"
+                        OnPageChanged="@HandlePageChanged"
+                        OnItemsPerPageChangedCallback="@HandleItemsPerPageChanged" />
                 }
                 else
                 {
@@ -415,6 +422,8 @@
     private string SearchText = "";
     private string FilterCategory = "";
     private string FilterStatus = "Active";
+    private int CurrentPage = 1;
+    private int ItemsPerPage = 10;
     private bool ShowModal = false;
     private bool ShowStockModal = false;
     private bool ShowInactiveModal = false;
@@ -475,6 +484,8 @@
                 .OrderBy(c => c)
                 .ToList();
 
+            CurrentPage = 1;
+
             IsLoaded = true;
         }
         catch (Exception ex)
@@ -496,6 +507,7 @@
     private void OnSearchChanged(ChangeEventArgs e)
     {
         SearchText = e.Value?.ToString() ?? string.Empty;
+        CurrentPage = 1;
     }
 
     private List<InventoryItem> FilteredItems
@@ -529,6 +541,30 @@
 
             return query.OrderBy(i => i.ItemName).ToList();
         }
+    }
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredItems.Count / (double)ItemsPerPage));
+
+    private IEnumerable<InventoryItem> PagedItems
+    {
+        get
+        {
+            var safePage = Math.Clamp(CurrentPage, 1, TotalPages);
+            return FilteredItems
+                .Skip((safePage - 1) * ItemsPerPage)
+                .Take(ItemsPerPage);
+        }
+    }
+
+    private void HandlePageChanged(int page)
+    {
+        CurrentPage = Math.Clamp(page, 1, TotalPages);
+    }
+
+    private void HandleItemsPerPageChanged(int size)
+    {
+        ItemsPerPage = size;
+        CurrentPage = 1;
     }
 
     private List<InventoryItem> InactiveItems => InventoryItems.Where(i => i.IsActive != true).ToList();

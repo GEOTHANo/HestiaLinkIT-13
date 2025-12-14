@@ -6,17 +6,17 @@
             &lt;
         </button>
         
-        @foreach (var page in GetVisiblePages())
+        @foreach (var pg in GetVisiblePages())
         {
-            @if (page == -1)
+            @if (pg == -1)
             {
                 <span class="pagination-ellipsis">...</span>
             }
             else
             {
-                <button class="pagination-btn @(page == CurrentPage ? "active" : "")" 
-                        @onclick="() => GoToPage(page)">
-                    @page
+                <button class="pagination-btn @(pg == CurrentPage ? "active" : "")" 
+                        @onclick="() => GoToPage(pg)">
+                    @pg
                 </button>
             }
         }
@@ -32,7 +32,7 @@
         </div>
         <div class="pagination-items-per-page">
             <label>Items per page:</label>
-            <select @bind="ItemsPerPage" @bind:event="onchange" @onchange="OnItemsPerPageChanged">
+            <select value="@ItemsPerPage" @onchange="HandleItemsPerPageChanged">
                 <option value="10">10</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
@@ -47,7 +47,7 @@
     [Parameter] public int TotalItems { get; set; }
     [Parameter] public int ItemsPerPage { get; set; } = 10;
     [Parameter] public EventCallback<int> OnPageChanged { get; set; }
-    [Parameter] public EventCallback<int> OnItemsPerPageChanged { get; set; }
+    [Parameter] public EventCallback<int> OnItemsPerPageChangedCallback { get; set; }
 
     private int TotalPages => (int)Math.Ceiling((double)TotalItems / ItemsPerPage);
 
@@ -122,13 +122,13 @@
         }
     }
 
-    private async Task OnItemsPerPageChanged(ChangeEventArgs e)
+    private async Task HandleItemsPerPageChanged(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out int newItemsPerPage) && newItemsPerPage > 0)
         {
             ItemsPerPage = newItemsPerPage;
             CurrentPage = 1; // Reset to first page when changing items per page
-            await OnItemsPerPageChanged.InvokeAsync(newItemsPerPage);
+            await OnItemsPerPageChangedCallback.InvokeAsync(newItemsPerPage);
             await OnPageChanged.InvokeAsync(1);
         }
     }

@@ -1,9 +1,9 @@
 @page "/settings/user-management"
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Web
 @using System.Data
 @inject HestiaLinkContext Context
 @inject IJSRuntime JSRuntime
-@layout MainLayout
 
 <div class="page-wrapper">
     <header class="page-topbar">
@@ -70,7 +70,7 @@
                     View Archived (@ArchivedUsersCount)
                 </button>
                 <button class="btn-create" @onclick="OpenCreateModal" disabled="@(!IsLoaded || IsProcessing)">
-                    + New User
+                    New User
                 </button>
             </div>
         </div>
@@ -1087,23 +1087,6 @@
 
 <style>
     /* ... existing styles ... */
-    .page-wrapper {
-        background: #f9fafb;
-        min-height: 100vh;
-    }
-
-    .page-topbar {
-        /* Using global page-topbar style - dark teal background with white text */
-    }
-
-    .page-topbar-subtitle {
-        /* Using global page-topbar-subtitle style */
-    }
-
-    .page-content {
-        padding: 24px;
-    }
-
     .error-banner {
         background: #fee2e2;
         border: 1px solid #fca5a5;

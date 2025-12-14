@@ -277,10 +277,10 @@
     private List<EmployeeTaxRecord> EmployeeTaxRecords = new List<EmployeeTaxRecord>();
     private List<ServiceChargeEmployee> ServiceChargeDistribution = new List<ServiceChargeEmployee>();
 
-    private decimal TotalVATCollected => GuestBills.Sum(b => b.VAT);
-    private decimal TotalServiceChargeCollected => GuestBills.Sum(b => b.ServiceCharge);
-    private decimal TotalIncomeTaxDeducted => EmployeeTaxRecords.Sum(e => e.MonthlyTax);
-    private int EligibleEmployeesCount => ServiceChargeDistribution.Count(e => e.IsRankAndFile);
+    private decimal TotalVATCollected => GuestBills?.Sum(b => b.VAT) ?? 0;
+    private decimal TotalServiceChargeCollected => GuestBills?.Sum(b => b.ServiceCharge) ?? 0;
+    private decimal TotalIncomeTaxDeducted => EmployeeTaxRecords?.Sum(e => e.MonthlyTax) ?? 0;
+    private int EligibleEmployeesCount => ServiceChargeDistribution?.Count(e => e.IsRankAndFile) ?? 0;
     private decimal PerEmployeeShare => EligibleEmployeesCount > 0 ? TotalServiceChargeCollected / EligibleEmployeesCount : 0;
 
     protected override async Task OnInitializedAsync()
@@ -294,8 +294,8 @@
         {
             // 1. Load Paid Bills for VAT/SC
             var bills = await _context.Bills
-                .Include(b => b.Reservation)
-                .ThenInclude(r => r.Guest)
+                .Include(b => b.Reservation!)
+                .ThenInclude(r => r!.Guest)
                 .Where(b => b.BillStatus == "Paid")
                 .ToListAsync();
 

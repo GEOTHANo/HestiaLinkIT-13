@@ -422,18 +422,18 @@
         {
             var bills = await _context.Bills
                 .Include(b => b.BillDetails)
-                .Include(b => b.Reservation)
-                .ThenInclude(r => r.Guest)
-                .Include(b => b.Reservation)
-                .ThenInclude(r => r.ReservedRooms)
+                .Include(b => b.Reservation!)
+                .ThenInclude(r => r!.Guest)
+                .Include(b => b.Reservation!)
+                .ThenInclude(r => r!.ReservedRooms)
                 .ThenInclude(rr => rr.Room)
                 .ToListAsync();
 
-            Invoices = bills.Select(b => new Invoice
+            Invoices = bills.Where(b => b.Reservation != null).Select(b => new Invoice
             {
                 Id = b.BillId,
                 GuestName = b.Reservation?.Guest != null ? $"{b.Reservation.Guest.FirstName} {b.Reservation.Guest.LastName}" : "Unknown Guest",
-                RoomNumber = b.Reservation?.ReservedRooms.FirstOrDefault()?.Room?.RoomNumber ?? "N/A",
+                RoomNumber = b.Reservation?.ReservedRooms?.FirstOrDefault()?.Room?.RoomNumber ?? "N/A",
                 CheckInDate = b.Reservation?.CreatedDate ?? DateTime.MinValue,
                 CheckOutDate = (b.Reservation?.CreatedDate ?? DateTime.Now).AddDays(1),
                 Subtotal = b.SubtotalAmount ?? 0,

@@ -7,6 +7,7 @@ namespace HestiaIT13Final
 {
     public static class MauiProgram
     {
+#pragma warning disable CA1416
         public static MauiApp CreateMauiApp()
         {
             var builder = MauiApp.CreateBuilder();
@@ -77,5 +78,6 @@ namespace HestiaIT13Final
 
             return app;
         }
+#pragma warning restore CA1416
     }
 }

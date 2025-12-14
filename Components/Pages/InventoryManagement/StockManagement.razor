@@ -66,7 +66,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in FilteredItems)
+                    @foreach (var item in PagedItems)
                     {
                         <tr>
                             <td style="font-weight: 700; color: #102f33;">@item.Name</td>
@@ -97,6 +97,13 @@
                     }
                 </tbody>
             </table>
+
+            <Pagination
+                TotalItems="@FilteredItems.Count"
+                ItemsPerPage="@ItemsPerPage"
+                CurrentPage="@Math.Clamp(CurrentPage, 1, TotalPages)"
+                OnPageChanged="@HandlePageChanged"
+                OnItemsPerPageChangedCallback="@HandleItemsPerPageChanged" />
         </div>
     </div>
     </section>
@@ -231,6 +238,8 @@
 @code {
     private string SearchText { get; set; } = "";
     private string SelectedCategory { get; set; } = "";
+    private int CurrentPage = 1;
+    private int ItemsPerPage = 10;
     private bool ShowModal = false;
     private bool IsEditMode = false;
     private InventoryItem CurrentItem = new();
@@ -246,6 +255,30 @@
         .Where(i => (string.IsNullOrEmpty(SearchText) || i.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase) || i.Supplier.Contains(SearchText, StringComparison.OrdinalIgnoreCase)) &&
                     (string.IsNullOrEmpty(SelectedCategory) || i.Category == SelectedCategory))
         .ToList();
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredItems.Count / (double)ItemsPerPage));
+
+    private IEnumerable<InventoryItem> PagedItems
+    {
+        get
+        {
+            var safePage = Math.Clamp(CurrentPage, 1, TotalPages);
+            return FilteredItems
+                .Skip((safePage - 1) * ItemsPerPage)
+                .Take(ItemsPerPage);
+        }
+    }
+
+    private void HandlePageChanged(int page)
+    {
+        CurrentPage = Math.Clamp(page, 1, TotalPages);
+    }
+
+    private void HandleItemsPerPageChanged(int size)
+    {
+        ItemsPerPage = size;
+        CurrentPage = 1;
+    }
 
     private void OpenCreateModal() { CurrentItem = new InventoryItem(); IsEditMode = false; ShowModal = true; }
 
