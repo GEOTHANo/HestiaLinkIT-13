@@ -1,4 +1,4 @@
-﻿@page "/reservations/check-in-check-out"
+@page "/reservations/check-in-check-out"
 @using System.Linq
 @using System.Data
 @using HestiaLink.Data
@@ -50,7 +50,6 @@
         <div class="toolbar" style="display:flex; align-items:center; gap:16px; margin-bottom:18px;">
             <div style="display:flex; gap:12px; align-items:center; flex: 1;">
                 <div class="search-box" style="width: 320px;">
-                    <span class="search-icon">🔍</span>
                     <input placeholder="Search by room or guest..." @bind="SearchText" @bind:event="oninput" />
                 </div>
                 <select class="filter-select" @bind="FilterStatus" style="width: 140px;">

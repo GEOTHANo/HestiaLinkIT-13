@@ -41,7 +41,6 @@
                            @bind="SearchText"
                            @oninput="OnSearchChanged"
                            @onkeydown="HandleKeyDown" />
-                    <span class="search-icon">🔍</span>
                     @if (!string.IsNullOrEmpty(SearchText))
                     {
                         <button class="clear-search" @onclick="ClearSearch" title="Clear search">
@@ -1196,9 +1195,7 @@
     }
 
     .search-icon {
-        position: absolute;
-        right: 12px;
-        color: #64748b;
+        display: none;
     }
 
     .clear-search {

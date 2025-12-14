@@ -1,9 +1,10 @@
-﻿@page "/hr/attendance"
+@page "/hr/attendance"
 @using HestiaLink.Data
 @using HestiaLink.Models
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.EntityFrameworkCore.Infrastructure
 @using AttendanceRecord = HestiaLink.Models.Attendance
-@inject HestiaLinkContext Context
+@inject IDbContextFactory<HestiaLinkContext> ContextFactory
 @inject IJSRuntime JSRuntime
 @layout MainLayout
 
@@ -45,7 +46,6 @@
         <div class="toolbar-left">
             <div class="toolbar-search">
                 <input type="text" placeholder="Search by name or ID..." @bind="SearchText" @oninput="OnSearchChanged" />
-                <span class="search-icon"></span>
             </div>
             <input type="date" class="filter-select" value="@SelectedDate.ToString("yyyy-MM-dd")"
                    style="padding: 10px 16px;" @onchange="OnDateChanged" />
@@ -450,18 +450,19 @@
             HasError = false;
             ErrorMessage = string.Empty;
 
-            Employees = await Context.Employees
+            using var context = ContextFactory.CreateDbContext();
+            Employees = await context.Employees
                 .Include(e => e.Position).ThenInclude(p => p!.Department)
                 .Where(e => e.Status == "Active")
                 .AsNoTracking().OrderBy(e => e.FirstName).ToListAsync();
 
-            Schedules = await Context.Schedules
+            Schedules = await context.Schedules
                 .Where(s => s.ScheduleDate == DateOnly.FromDateTime(SelectedDate) && s.IsActive == true)
                 .AsNoTracking().ToListAsync();
 
             var scheduleIds = Schedules.Select(s => s.ScheduleId).ToList();
 
-            Attendances = await Context.Attendances
+            Attendances = await context.Attendances
                 .Where(a => a.AttendanceDate == DateOnly.FromDateTime(SelectedDate) && scheduleIds.Contains(a.ScheduleId))
                 .Include(a => a.Schedule).AsNoTracking().ToListAsync();
 
@@ -607,14 +608,15 @@
         if (SelectedEmployee == null || string.IsNullOrEmpty(SelectedShiftType)) return;
         try
         {
-            var existingSchedule = await Context.Schedules
+            using var context = ContextFactory.CreateDbContext();
+            var existingSchedule = await context.Schedules
                 .FirstOrDefaultAsync(s => s.EmployeeId == SelectedEmployee.EmployeeId && s.ScheduleDate == DateOnly.FromDateTime(ShiftDate) && s.IsActive == true);
 
             if (existingSchedule != null)
             {
                 existingSchedule.IsActive = false;
                 existingSchedule.UpdatedAt = DateTime.Now;
-                Context.Schedules.Update(existingSchedule);
+                context.Schedules.Update(existingSchedule);
             }
 
             var newSchedule = new Schedule
@@ -628,14 +630,14 @@
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
-            Context.Schedules.Add(newSchedule);
-            await Context.SaveChangesAsync();
+            context.Schedules.Add(newSchedule);
+            await context.SaveChangesAsync();
 
             if (existingSchedule != null)
             {
-                var attendancesToUpdate = await Context.Attendances.Where(a => a.ScheduleId == existingSchedule.ScheduleId).ToListAsync();
+                var attendancesToUpdate = await context.Attendances.Where(a => a.ScheduleId == existingSchedule.ScheduleId).ToListAsync();
                 foreach (var att in attendancesToUpdate) { att.ScheduleId = newSchedule.ScheduleId; att.UpdatedAt = DateTime.Now; }
-                await Context.SaveChangesAsync();
+                await context.SaveChangesAsync();
             }
 
             await LoadData();
@@ -649,14 +651,15 @@
     {
         try
         {
-            var existingAttendance = await Context.Attendances.FirstOrDefaultAsync(a => a.ScheduleId == schedule.ScheduleId);
+            using var context = ContextFactory.CreateDbContext();
+            var existingAttendance = await context.Attendances.FirstOrDefaultAsync(a => a.ScheduleId == schedule.ScheduleId);
 
             if (existingAttendance != null)
             {
                 existingAttendance.ActualCheckIn = DateTime.Now;
                 existingAttendance.AttendanceStatus = "Present";
                 existingAttendance.UpdatedAt = DateTime.Now;
-                Context.Attendances.Update(existingAttendance);
+                context.Attendances.Update(existingAttendance);
             }
             else
             {
@@ -669,9 +672,9 @@
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
                 };
-                Context.Attendances.Add(newAttendance);
+                context.Attendances.Add(newAttendance);
             }
-            await Context.SaveChangesAsync();
+            await context.SaveChangesAsync();
             await LoadData();
             await JSRuntime.InvokeVoidAsync("alert", $"{emp.FirstName} checked in successfully");
         }
@@ -682,7 +685,8 @@
     {
         try
         {
-            var existing = await Context.Attendances.FindAsync(attendance.AttendanceId);
+            using var context = ContextFactory.CreateDbContext();
+            var existing = await context.Attendances.FindAsync(attendance.AttendanceId);
             if (existing != null)
             {
                 existing.ActualCheckOut = DateTime.Now;
@@ -693,8 +697,8 @@
                     existing.OvertimeHours = (decimal)Math.Max(hours - 8, 0);
                 }
                 existing.UpdatedAt = DateTime.Now;
-                Context.Attendances.Update(existing);
-                await Context.SaveChangesAsync();
+                context.Attendances.Update(existing);
+                await context.SaveChangesAsync();
                 await LoadData();
                 await JSRuntime.InvokeVoidAsync("alert", "Check-out recorded");
             }
@@ -709,8 +713,9 @@
             var emp = Employees.FirstOrDefault(e => e.EmployeeId == employeeId);
             if (emp == null) return;
             HistoryEmployeeName = $"{emp.FirstName} {emp.LastName}";
-            var scheduleIds = await Context.Schedules.Where(s => s.EmployeeId == employeeId).Select(s => s.ScheduleId).ToListAsync();
-            HistoryRecords = await Context.Attendances
+            using var context = ContextFactory.CreateDbContext();
+            var scheduleIds = await context.Schedules.Where(s => s.EmployeeId == employeeId).Select(s => s.ScheduleId).ToListAsync();
+            HistoryRecords = await context.Attendances
                 .Where(a => scheduleIds.Contains(a.ScheduleId))
                 .Include(a => a.Schedule)
                 .OrderByDescending(a => a.AttendanceDate).Take(30).AsNoTracking().ToListAsync();

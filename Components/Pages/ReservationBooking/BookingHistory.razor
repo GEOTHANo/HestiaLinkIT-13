@@ -1,4 +1,4 @@
-﻿@page "/reservations/booking-history"
+@page "/reservations/booking-history"
 @using HestiaLink.Data
 @using HestiaLink.Models
 @using Microsoft.EntityFrameworkCore
@@ -53,7 +53,6 @@
                 <!-- Right - Search Bar -->
                 <div class="right-filters">
                     <div class="search-box">
-                        <span class="search-icon">🔍</span>
                         <input type="text" placeholder="Search by guest name or booking ID..."
                                @bind="SearchText"
                                @bind:event="oninput" />
@@ -257,7 +256,7 @@
 
         .search-box input {
             width: 100%;
-            padding: 10px 14px 10px 40px;
+            padding: 10px 14px;
             border: 2px solid #e5e7eb;
             border-radius: 6px;
             font-size: 0.9rem;
@@ -272,11 +271,7 @@
             }
 
     .search-icon {
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #64748b;
+        display: none;
         font-size: 1rem;
         z-index: 1;
     }

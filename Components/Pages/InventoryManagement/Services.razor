@@ -1,4 +1,4 @@
-﻿@page "/inventory/services"
+@page "/inventory/services"
 @using Microsoft.EntityFrameworkCore
 @using System.Globalization
 @inject IJSRuntime JSRuntime
@@ -55,7 +55,6 @@
     <div class="user-toolbar">
         <div class="toolbar-left">
             <div class="toolbar-search">
-                <span class="search-icon">🔍</span>
                 <input type="text" placeholder="Search by name or ID..." @bind="SearchText" @oninput="OnSearchChanged" />
             </div>
             <select class="filter-select" @bind="FilterStatus">
@@ -564,15 +563,11 @@
     }
     
     .search-icon {
-        position: absolute;
-        left: 14px;
-        font-size: 1.1rem;
-        color: #94a3b8;
-        pointer-events: none;
+        display: none;
     }
 
     .toolbar-search input {
-        padding: 12px 14px 12px 42px;
+        padding: 12px 14px;
         border-radius: 10px;
         border: 1px solid #e6e6e6;
         width: 340px;

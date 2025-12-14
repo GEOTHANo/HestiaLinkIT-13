@@ -1,4 +1,4 @@
-﻿@page "/housekeeping/room-status"
+@page "/housekeeping/room-status"
 @using HestiaLink.Data
 @using HestiaLink.Models
 @using Microsoft.EntityFrameworkCore
@@ -19,7 +19,6 @@
         <div class="toolbar" style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:18px;">
             <div style="display:flex; gap:12px; align-items:center;">
                 <div class="search-box" style="width: 320px;">
-                    <span class="search-icon">🔍</span>
                     <input placeholder="Search Room..." @bind="SearchTerm" @bind:event="oninput" />
                 </div>
                 <select class="filter-select" @bind="FilterStatus" style="width: 200px;">

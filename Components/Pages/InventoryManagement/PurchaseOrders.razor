@@ -1,4 +1,4 @@
-﻿@page "/inventory/purchase-orders"
+@page "/inventory/purchase-orders"
 @using Microsoft.EntityFrameworkCore
 @using HestiaLink.Models
 @using HestiaLink.Data
@@ -52,7 +52,6 @@
             <div class="toolbar-left">
                 <div class="toolbar-search">
                     <input type="text" placeholder="Search by PO #, Item, or Supplier..." @bind="SearchText" @oninput="OnSearchChanged" />
-                    <span class="search-icon"></span>
                 </div>
                 <select class="filter-select" @bind="FilterStatus">
                     <option value="">All Status</option>
