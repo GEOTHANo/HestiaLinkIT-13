@@ -109,7 +109,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var emp in FilteredEmployees)
+                            @foreach (var emp in PaginatedEmployees)
                             {
                                 var schedule = Schedules.FirstOrDefault(s => s.EmployeeId == emp.EmployeeId);
                                 var attendance = schedule != null
@@ -204,6 +204,15 @@
                             }
                         </tbody>
                     </table>
+                    
+                    @if (FilteredEmployees.Count > 0)
+                    {
+                        <Pagination CurrentPage="@CurrentPage" 
+                                    TotalItems="@FilteredEmployees.Count" 
+                                    ItemsPerPage="@ItemsPerPage"
+                                    OnPageChanged="@OnPageChanged"
+                                    OnItemsPerPageChangedCallback="@OnItemsPerPageChanged" />
+                    }
                 }
                 else
                 {
@@ -439,6 +448,10 @@
     private bool HasError = false;
     private string ErrorMessage = string.Empty;
     private string SelectedFilter = "";
+    
+    // Pagination
+    private int CurrentPage = 1;
+    private int ItemsPerPage = 10;
 
     private List<Employee> Employees = new();
     private List<Schedule> Schedules = new();
@@ -580,6 +593,24 @@
 
             return list.OrderBy(e => e.FirstName).ToList();
         }
+    }
+
+    private List<Employee> PaginatedEmployees => FilteredEmployees
+        .Skip((CurrentPage - 1) * ItemsPerPage)
+        .Take(ItemsPerPage)
+        .ToList();
+
+    private void OnPageChanged(int page)
+    {
+        CurrentPage = page;
+        StateHasChanged();
+    }
+
+    private void OnItemsPerPageChanged(int itemsPerPage)
+    {
+        ItemsPerPage = itemsPerPage;
+        CurrentPage = 1;
+        StateHasChanged();
     }
 
     private void UpdateRangeDates()

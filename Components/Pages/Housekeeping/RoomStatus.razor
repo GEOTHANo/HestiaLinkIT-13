@@ -52,7 +52,7 @@
             }
             else
             {
-                @foreach (var room in FilteredRooms)
+                @foreach (var room in PaginatedRooms)
                 {
                     <div class="user-card">
                         <div class="card-top" style="margin-bottom:12px;">
@@ -101,6 +101,12 @@
                 }
             }
         </div>
+        
+        <Pagination CurrentPage="@CurrentPage" 
+                    TotalItems="@FilteredRooms.Count()" 
+                    ItemsPerPage="@ItemsPerPage"
+                    OnPageChanged="@OnPageChanged"
+                    OnItemsPerPageChangedCallback="@OnItemsPerPageChanged" />
     </div>
 </div>
 
@@ -108,10 +114,31 @@
     private List<Room> Rooms = new();
     private string SearchTerm = "";
     private string FilterStatus = "";
+    
+    // Pagination
+    private int CurrentPage = 1;
+    private int ItemsPerPage = 12;
 
     private IEnumerable<Room> FilteredRooms => Rooms
         .Where(r => string.IsNullOrEmpty(SearchTerm) || r.RoomNumber.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
         .Where(r => string.IsNullOrEmpty(FilterStatus) || r.Status == FilterStatus);
+
+    private IEnumerable<Room> PaginatedRooms => FilteredRooms
+        .Skip((CurrentPage - 1) * ItemsPerPage)
+        .Take(ItemsPerPage);
+
+    private void OnPageChanged(int page)
+    {
+        CurrentPage = page;
+        StateHasChanged();
+    }
+
+    private void OnItemsPerPageChanged(int itemsPerPage)
+    {
+        ItemsPerPage = itemsPerPage;
+        CurrentPage = 1;
+        StateHasChanged();
+    }
 
     protected override async Task OnInitializedAsync()
     {
