@@ -76,7 +76,7 @@
     else if (HasError)
     {
         <div class="error-message">
-            <h4>⚠️ Database Error</h4>
+            <h4><svg class="icon-inline" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Database Error</h4>
             <p>@ErrorMessage</p>
             <button class="btn-primary" @onclick="RetryLoad">Retry</button>
         </div>

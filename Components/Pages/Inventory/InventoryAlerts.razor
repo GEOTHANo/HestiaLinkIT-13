@@ -47,7 +47,7 @@
             @if (OutOfStockCount > 0)
             {
                 <div class="alert-banner critical">
-                    <span class="alert-icon">⚠️</span>
+                    <span class="alert-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span>
                     <span class="alert-msg"><strong>Action Required:</strong> @OutOfStockCount items are completely out of stock!</span>
                 </div>
             }
@@ -55,7 +55,7 @@
             @* ===== LOW STOCK GRID ===== *@
             <div class="panel-card full-width">
                 <div class="panel-header warning">
-                    <h3>⚠️ Low Stock - Reorder Recommended</h3>
+                    <h3><svg class="icon-inline" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Low Stock - Reorder Recommended</h3>
                     <span class="header-badge">@LowStockItems.Count items</span>
                 </div>
                 <div class="panel-body">
@@ -85,7 +85,7 @@
                                         <td><span class="category-badge">@item.Category</span></td>
                                         <td><span class="stock-badge critical">@(item.CurrentStock ?? 0) @item.UnitOfMeasure</span></td>
                                         <td>@(item.ReorderPoint ?? 0)</td>
-                                        <td class="fw-bold" style="color:#0f766e;">@orderQty @item.UnitOfMeasure</td>
+                                        <td class="fw-bold" style="color:#0093a0;">@orderQty @item.UnitOfMeasure</td>
                                         <td>₱@estCost.ToString("N2")</td>
                                         <td style="text-align:right;">
                                             <button class="btn-sm-primary" @onclick="() => PrintReorder(item)">Restock</button>
@@ -97,7 +97,7 @@
                     }
                     else
                     {
-                        <div class="no-data">✅ No low stock alerts. Inventory is healthy!</div>
+                        <div class="no-data"><svg class="icon-inline" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> No low stock alerts. Inventory is healthy!</div>
                     }
                 </div>
             </div>
@@ -106,7 +106,7 @@
                 @* ===== REORDER SUMMARY ===== *@
                 <div class="panel-card reorder-summary-panel">
                     <div class="panel-header" style="background:transparent; border:none; padding-bottom:0;">
-                        <h3 style="color:white; font-size:1.5rem;">📋 Reorder Summary</h3>
+                        <h3 style="color:white; font-size:1.5rem;"><svg class="icon-inline" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg> Reorder Summary</h3>
                     </div>
                     <div class="reorder-stats">
                         <div class="reorder-stat">
@@ -119,7 +119,7 @@
                         </div>
                     </div>
                     <div class="panel-footer" style="padding:20px;">
-                        <button class="btn-white-outline" @onclick="ExportReorderList">📄 Export to PDF</button>
+                        <button class="btn-white-outline" @onclick="ExportReorderList"><svg class="icon-inline" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg> Export to PDF</button>
                     </div>
                 </div>
             </div>
@@ -268,7 +268,7 @@
     }
 
     .summary-card .summary-label {
-        color: #0e7490; /* Cyan-700 */
+        color: #00535b; /* Dark Teal */
         font-size: 0.8rem;
         font-weight: 800;
         letter-spacing: 0.5px;
@@ -394,7 +394,7 @@
 
     /* Btns */
     .btn-sm-primary {
-        background: #0f766e;
+        background: #0093a0;
         color: white;
         border: none;
         padding: 6px 14px;
@@ -406,7 +406,7 @@
 
     /* Reorder Panel */
     .reorder-summary-panel {
-        background: linear-gradient(135deg, #0f766e, #0d9488);
+        background: linear-gradient(135deg, #0093a0, #00535b);
         color: white;
     }
 
@@ -448,7 +448,7 @@
 
     .btn-white-outline:hover {
         background: white;
-        color: #0f766e;
+        color: #0093a0;
     }
 
     /* Alert Banner */

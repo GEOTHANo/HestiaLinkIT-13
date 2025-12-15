@@ -58,12 +58,8 @@ public partial class HestiaLinkContext : DbContext
     public virtual DbSet<VwTodaysRoomStatus> VwTodaysRoomStatuses { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseSqlServer("Data Source=JESTER-PC\\SQLEXPRESS;Initial Catalog=IT13;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False;Command Timeout=30;MultipleActiveResultSets=true");
-        }
-    }
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code.
+        => optionsBuilder.UseSqlServer("Data Source=LAPTOP-E5NDCGBJ\\SQLEXPRESS;Initial Catalog=IT13;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False;Command Timeout=30");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -71,6 +67,7 @@ public partial class HestiaLinkContext : DbContext
         modelBuilder.Entity<OperationalExpense>(entity =>
         {
             entity.HasKey(e => e.ExpenseId);
+            entity.Property(e => e.ExpenseId).ValueGeneratedOnAdd();
             entity.ToTable("OperationalExpenses");
             entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.ExpenseDate).HasColumnType("datetime");

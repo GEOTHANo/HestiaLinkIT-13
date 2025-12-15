@@ -38,6 +38,17 @@
     transform: translateY(0);
 }
 
+.logout-button .sidebar-nav-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.logout-button .sidebar-nav-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: white;
+}
+
 .logout-modal-overlay {
     position: fixed;
     top: 0;

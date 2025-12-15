@@ -83,7 +83,7 @@
     else if (HasError)
     {
         <div class="error-message">
-            <h4>⚠️ Database Error</h4>
+            <h4><svg class="icon-inline" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Database Error</h4>
             <p>@ErrorMessage</p>
             <button class="btn-primary" style="margin-top:15px;" @onclick="RetryLoad">Retry</button>
         </div>
@@ -192,7 +192,7 @@
                                         <div style="display:flex; justify-content:center; gap:8px;">
                                             <button class="btn-secondary" style="padding:6px 10px; background:#10b981; color:white;"
                                                     @onclick="() => OpenShiftModal(emp, schedule)">
-                                                @(schedule != null ? "Edit" : "➕")
+                                                @(schedule != null ? "Edit" : "+")
                                             </button>
                                             <button class="btn-secondary" style="padding:6px 10px; background:#64748b; color:white;"
                                                     @onclick="() => ViewHistory(emp.EmployeeId)">
@@ -244,9 +244,9 @@
                     <label class="form-label">Shift Type</label>
                     <select class="form-input" @bind="SelectedShiftType" @bind:after="OnShiftTypeChanged">
                         <option value="">-- Select Shift Type --</option>
-                        <option value="Day">🌅 Day Shift (5:00 AM - 5:00 PM)</option>
-                        <option value="Night">🌙 Night Shift (5:00 PM - 5:00 AM)</option>
-                        <option value="Custom">⚙️ Custom Schedule</option>
+                        <option value="Day">Day Shift (5:00 AM - 5:00 PM)</option>
+                        <option value="Night">Night Shift (5:00 PM - 5:00 AM)</option>
+                        <option value="Custom">Custom Schedule</option>
                     </select>
                 </div>
                 <div class="form-group">
