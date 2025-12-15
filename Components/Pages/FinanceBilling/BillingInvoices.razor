@@ -108,26 +108,11 @@
             </div>
 
             <!-- Pagination -->
-            <div class="pagination-container">
-                <div class="pagination-info">
-                    Showing @(((CurrentPage - 1) * PageSize) + 1) to @(Math.Min(CurrentPage * PageSize, TotalFilteredCount)) of @TotalFilteredCount invoices
-                </div>
-                <div class="pagination-controls">
-                    <button class="btn-page" disabled="@(CurrentPage == 1)" @onclick="() => GoToPage(1)" title="First">
-                        &laquo;
-                    </button>
-                    <button class="btn-page" disabled="@(CurrentPage == 1)" @onclick="() => GoToPage(CurrentPage - 1)" title="Previous">
-                        &lt;
-                    </button>
-                    <span class="page-indicator">Page @CurrentPage of @TotalPages</span>
-                    <button class="btn-page" disabled="@(CurrentPage >= TotalPages)" @onclick="() => GoToPage(CurrentPage + 1)" title="Next">
-                        &gt;
-                    </button>
-                    <button class="btn-page" disabled="@(CurrentPage >= TotalPages)" @onclick="() => GoToPage(TotalPages)" title="Last">
-                        &raquo;
-                    </button>
-                </div>
-            </div>
+            <Pagination CurrentPage="@CurrentPage" 
+                        TotalItems="@TotalFilteredCount" 
+                        ItemsPerPage="@PageSize"
+                        OnPageChanged="@OnPageChanged"
+                        OnItemsPerPageChangedCallback="@OnItemsPerPageChanged" />
         </div>
     </section>
 </div>
@@ -403,12 +388,18 @@
         .Take(PageSize)
         .ToList();
 
-    private void GoToPage(int page)
+    private void OnPageChanged(int page)
     {
         if (page >= 1 && page <= TotalPages)
         {
             CurrentPage = page;
         }
+    }
+
+    private void OnItemsPerPageChanged(int itemsPerPage)
+    {
+        PageSize = itemsPerPage;
+        CurrentPage = 1;
     }
 
     protected override async Task OnInitializedAsync()

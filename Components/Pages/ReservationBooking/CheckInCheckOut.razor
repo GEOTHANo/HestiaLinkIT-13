@@ -81,7 +81,7 @@
         }
 
         <div class="cards-grid">
-            @foreach (var room in FilteredRooms)
+            @foreach (var room in PaginatedRooms)
             {
                 <div class="user-card" @onclick="() => OnRoomClicked(room)" style="border-radius:12px; border:none; box-shadow:0 1px 3px rgba(0,0,0,0.1); background:#fafafa;">
                     <div class="card-top" style="margin-bottom:12px;">
@@ -118,6 +118,12 @@
                 </div>
             }
         </div>
+        
+        <Pagination CurrentPage="@CurrentPage" 
+                    TotalItems="@FilteredRooms.Count()" 
+                    ItemsPerPage="@ItemsPerPage"
+                    OnPageChanged="@OnPageChanged"
+                    OnItemsPerPageChangedCallback="@OnItemsPerPageChanged" />
     </section>
 </div>
 
@@ -451,6 +457,10 @@
     private bool ShowServicesDropdown = false;
     private bool _isInitialized = false;
     private bool IsLoaded = false;
+    
+    // Pagination
+    private int CurrentPage = 1;
+    private int ItemsPerPage = 12;
 
     private List<RoomCard> Rooms = new();
     private List<Service> AvailableServices = new();
@@ -821,6 +831,23 @@
         string.IsNullOrWhiteSpace(SearchText) || r.RoomNumber.Contains(SearchText, StringComparison.OrdinalIgnoreCase) || (r.GuestName ?? "").Contains(SearchText, StringComparison.OrdinalIgnoreCase))
         && (FilterStatus == "All" || r.Status == FilterStatus)
         && (FilterFloor == "All" || r.Floor.ToString() == FilterFloor));
+
+    private IEnumerable<RoomCard> PaginatedRooms => FilteredRooms
+        .Skip((CurrentPage - 1) * ItemsPerPage)
+        .Take(ItemsPerPage);
+
+    private void OnPageChanged(int page)
+    {
+        CurrentPage = page;
+        StateHasChanged();
+    }
+
+    private void OnItemsPerPageChanged(int itemsPerPage)
+    {
+        ItemsPerPage = itemsPerPage;
+        CurrentPage = 1;
+        StateHasChanged();
+    }
 
     private async void RefreshList()
     {

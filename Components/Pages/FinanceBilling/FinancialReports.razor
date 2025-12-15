@@ -227,16 +227,11 @@
                         </table>
                         
                         <!-- Pagination -->
-                        @if (TotalPaymentPages > 1)
-                        {
-                            <div class="pagination">
-                                <button class="page-btn" disabled="@(CurrentPaymentPage == 1)" @onclick="() => CurrentPaymentPage = 1">« First</button>
-                                <button class="page-btn" disabled="@(CurrentPaymentPage == 1)" @onclick="() => CurrentPaymentPage--">‹ Prev</button>
-                                <span class="page-info">Page @CurrentPaymentPage of @TotalPaymentPages</span>
-                                <button class="page-btn" disabled="@(CurrentPaymentPage == TotalPaymentPages)" @onclick="() => CurrentPaymentPage++">Next ›</button>
-                                <button class="page-btn" disabled="@(CurrentPaymentPage == TotalPaymentPages)" @onclick="() => CurrentPaymentPage = TotalPaymentPages">Last »</button>
-                            </div>
-                        }
+                        <Pagination CurrentPage="@CurrentPaymentPage" 
+                                    TotalItems="@PaymentHistory.Count" 
+                                    ItemsPerPage="@PaymentsPerPage"
+                                    OnPageChanged="@OnPaymentPageChanged"
+                                    OnItemsPerPageChangedCallback="@OnPaymentsPerPageChanged" />
                     }
                     else
                     {
@@ -519,6 +514,20 @@
         .Skip((CurrentPaymentPage - 1) * PaymentsPerPage)
         .Take(PaymentsPerPage)
         .ToList();
+
+    private void OnPaymentPageChanged(int page)
+    {
+        if (page >= 1 && page <= TotalPaymentPages)
+        {
+            CurrentPaymentPage = page;
+        }
+    }
+
+    private void OnPaymentsPerPageChanged(int itemsPerPage)
+    {
+        PaymentsPerPage = itemsPerPage;
+        CurrentPaymentPage = 1;
+    }
 
     private decimal TotalRevenue => BillSummary?.Sum(b => b.GrandTotal ?? 0) ?? 0;
     private decimal TotalPayments => PaymentHistory?.Sum(p => p.Amount ?? 0) ?? 0;

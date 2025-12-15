@@ -133,14 +133,12 @@
                             </tbody>
                         </table>
 
-                        <div style="margin-top: 14px; display:flex; justify-content: center;">
-                            <Pagination 
-                                CurrentPage="@CurrentPage"
-                                TotalItems="@FilteredPayrollSummary.Count"
-                                ItemsPerPage="@ItemsPerPage"
-                                OnPageChanged="@HandlePageChanged"
-                                OnItemsPerPageChangedCallback="@HandleItemsPerPageChanged" />
-                        </div>
+                        <Pagination 
+                            CurrentPage="@CurrentPage"
+                            TotalItems="@FilteredPayrollSummary.Count"
+                            ItemsPerPage="@ItemsPerPage"
+                            OnPageChanged="@HandlePageChanged"
+                            OnItemsPerPageChangedCallback="@HandleItemsPerPageChanged" />
                     }
                     else
                     {

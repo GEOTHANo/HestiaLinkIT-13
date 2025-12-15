@@ -126,23 +126,11 @@
                     </div>
 
                     <!-- Pagination -->
-                    <div class="pagination-section">
-                        <div class="pagination-info">
-                            Showing <strong>@((CurrentPage - 1) * PageSize + 1)</strong> to <strong>@Math.Min(CurrentPage * PageSize, TotalCount)</strong> of <strong>@TotalCount</strong> bookings
-                        </div>
-                        <div class="pagination-controls">
-                            <button class="pagination-btn" disabled="@(CurrentPage == 1)" @onclick="PreviousPage">← Previous</button>
-                            <span class="page-indicator">Page @CurrentPage of @TotalPages</span>
-                            <button class="pagination-btn" disabled="@(CurrentPage == TotalPages)" @onclick="NextPage">Next →</button>
-
-                            <select class="page-size-select" @onchange="OnPageSizeChanged" value="@PageSize">
-                                <option value="10">10 per page</option>
-                                <option value="25">25 per page</option>
-                                <option value="50">50 per page</option>
-                                <option value="100">100 per page</option>
-                            </select>
-                        </div>
-                    </div>
+                    <Pagination CurrentPage="@CurrentPage" 
+                                TotalItems="@TotalCount" 
+                                ItemsPerPage="@PageSize"
+                                OnPageChanged="@OnPageChanged"
+                                OnItemsPerPageChangedCallback="@OnItemsPerPageChanged" />
                 }
             </div>
         </div>
@@ -667,6 +655,22 @@
             IsLoading = false;
             StateHasChanged();
         }
+    }
+
+    private async void OnPageChanged(int page)
+    {
+        if (page >= 1 && page <= TotalPages && page != CurrentPage)
+        {
+            CurrentPage = page;
+            await LoadBookings();
+        }
+    }
+
+    private async void OnItemsPerPageChanged(int itemsPerPage)
+    {
+        PageSize = itemsPerPage;
+        CurrentPage = 1;
+        await LoadBookings();
     }
 
     private async Task LoadBookingsFromView()
