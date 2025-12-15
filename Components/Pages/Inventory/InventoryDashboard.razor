@@ -22,144 +22,150 @@
     }
     else
     {
-        @* ===== SUMMARY CARDS (CONSOLIDATED) ===== *@
-        <div class="summary-cards">
-            <!-- Inventory Overview -->
-            <div class="summary-card">
-                <div class="summary-label">INVENTORY STOCK</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px;">
-                    <div>
-                        <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Items</div>
-                        <div class="summary-value" style="font-size:2.2rem;">@TotalItems</div>
-                    </div>
-                    <div>
-                        <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Categories</div>
-                        <div class="summary-value" style="font-size:2.2rem;">@CategoryCount</div>
-                    </div>
+        @* ===== HERO STATS (like main Dashboard) ===== *@
+        <div class="dashboard-hero">
+            <div class="hero-stat">
+                <div class="hero-stat-icon">
+                    <svg viewBox="0 0 24 24"><path d="M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-5 12H9v-2h6v2zm5-7H4V4h16v3z"/></svg>
                 </div>
-                <div class="summary-desc" style="margin-top:8px;">@ServiceItemsCount service items</div>
+                <div class="hero-stat-value">@TotalItems</div>
+                <div class="hero-stat-label">Inventory Items</div>
+                <div class="hero-stat-change">@CategoryCount categories</div>
             </div>
-
-            <!-- Alerts & Warnings -->
-            <div class="summary-card danger">
-                <div class="summary-label">⚠️ ALERTS</div>
-                <div class="summary-value">@LowStockCount</div>
-                <div class="summary-desc">Items below reorder point</div>
-            </div>
-
-            <!-- Value & Usage -->
-            <div class="summary-card">
-                <div class="summary-label">VALUE & USAGE</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px;">
-                    <div>
-                        <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Total Value</div>
-                        <div class="summary-value" style="font-size:1.8rem;">₱@TotalStockValue.ToString("N0")</div>
-                    </div>
-                    <div>
-                        <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Today Used</div>
-                        <div class="summary-value" style="font-size:2.2rem;">@TodaysConsumption</div>
-                    </div>
+            <div class="hero-stat">
+                <div class="hero-stat-icon">
+                    <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
                 </div>
+                <div class="hero-stat-value">@LowStockCount</div>
+                <div class="hero-stat-label">Low Stock Alerts</div>
+                <div class="hero-stat-change">need reorder</div>
             </div>
-
-            <!-- Workforce Overview -->
-            <div class="summary-card">
-                <div class="summary-label">WORKFORCE & TASKS</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px;">
-                    <div>
-                        <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Staff</div>
-                        <div class="summary-value" style="font-size:2.2rem;">@TotalEmployees</div>
-                        <div style="font-size:0.75rem; color:#10b981; font-weight:600;">✓ @PresentEmployees present</div>
-                    </div>
-                    <div>
-                        <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Cleaning</div>
-                        <div class="summary-value" style="font-size:2.2rem;">@RoomsForCleaning</div>
-                        <div style="font-size:0.75rem; color:#64748b; font-weight:500;">need cleaning</div>
-                    </div>
+            <div class="hero-stat">
+                <div class="hero-stat-icon">
+                    <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
                 </div>
+                <div class="hero-stat-value">₱@TotalStockValue.ToString("N0")</div>
+                <div class="hero-stat-label">Total Stock Value</div>
+                <div class="hero-stat-change">current inventory</div>
+            </div>
+            <div class="hero-stat">
+                <div class="hero-stat-icon">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                </div>
+                <div class="hero-stat-value">@TodaysConsumption</div>
+                <div class="hero-stat-label">Today's Usage</div>
+                <div class="hero-stat-change">items consumed</div>
             </div>
         </div>
 
-        @* ===== QUICK ACTION BUTTONS ===== *@
-        <div class="quick-actions">
-            <a href="/inventory/items" class="action-btn">
-                <span class="action-icon">📦</span>
-                <span>Manage Items</span>
-            </a>
-            <a href="/inventory/reports" class="action-btn">
-                <span class="action-icon">📊</span>
-                <span>Reports</span>
-            </a>
-            <a href="/inventory/alerts" class="action-btn">
-                <span class="action-icon">⚠️</span>
-                <span>Alerts (@LowStockCount)</span>
-            </a>
+        @* ===== QUICK STATS ROW (like main Dashboard) ===== *@
+        <div class="quick-stats-row">
+            <div class="quick-stat">
+                <div class="quick-stat-value">@ServiceItemsCount</div>
+                <div class="quick-stat-label">Service Items</div>
+                <div class="quick-stat-desc">linked to services</div>
+            </div>
+            <div class="quick-stat">
+                <div class="quick-stat-value">@TotalEmployees</div>
+                <div class="quick-stat-label">Staff</div>
+                <div class="quick-stat-desc">@PresentEmployees present</div>
+            </div>
+            <div class="quick-stat">
+                <div class="quick-stat-value">@RoomsForCleaning</div>
+                <div class="quick-stat-label">Rooms to Clean</div>
+                <div class="quick-stat-desc">pending tasks</div>
+            </div>
+            <div class="quick-stat">
+                <a href="/inventory/items" style="text-decoration:none; color:inherit;">
+                    <div class="quick-stat-value" style="color:#0093a0;">→</div>
+                    <div class="quick-stat-label">Manage Items</div>
+                    <div class="quick-stat-desc">view all inventory</div>
+                </a>
+            </div>
+            <div class="quick-stat">
+                <a href="/inventory/reports" style="text-decoration:none; color:inherit;">
+                    <div class="quick-stat-value" style="color:#0093a0;">→</div>
+                    <div class="quick-stat-label">Reports</div>
+                    <div class="quick-stat-desc">inventory analytics</div>
+                </a>
+            </div>
+            <div class="quick-stat">
+                <a href="/inventory/alerts" style="text-decoration:none; color:inherit;">
+                    <div class="quick-stat-value" style="color:#dc2626;">@LowStockCount</div>
+                    <div class="quick-stat-label">Alerts</div>
+                    <div class="quick-stat-desc">view low stock</div>
+                </a>
+            </div>
         </div>
 
         <div class="dashboard-grid">
-            @* ===== LOW STOCK ALERTS PANEL ===== *@
-            <div class="panel-card">
-                <div class="panel-header">
-                    <h3>⚠️ Low Stock Alerts</h3>
-                    <a href="/inventory/alerts" class="view-all-link">View All</a>
+            @* ===== LOW STOCK ALERTS (Premium Design) ===== *@
+            <div class="premium-card">
+                <div class="premium-card-header">
+                    <h3 class="premium-card-title">
+                        <span class="card-icon">
+                            <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+                        </span>
+                        Low Stock Alerts
+                    </h3>
+                    <a href="/inventory/alerts" style="font-size:0.85rem; font-weight:600; color:#0093a0; text-decoration:none;">View All</a>
                 </div>
-                <div class="panel-body">
+                <div class="premium-card-body">
                     @if (LowStockItems.Any())
                     {
-                        <table class="inventory-table">
-                            <thead>
-                                <tr>
-                                    <th>Item</th>
-                                    <th>Current Stock</th>
-                                    <th>Reorder Point</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in LowStockItems.Take(5))
-                                {
-                                    <tr>
-                                        <td style="font-weight:600;">@item.ItemName</td>
-                                        <td>
-                                            <span class="stock-badge critical">@(item.CurrentStock ?? 0) @item.UnitOfMeasure</span>
-                                        </td>
-                                        <td>@(item.ReorderPoint ?? 0)</td>
-                                        <td>
-                                            @if ((item.CurrentStock ?? 0) == 0)
-                                            {
-                                                <span class="status-badge status-cancelled">Out of Stock</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="status-badge status-pending">Low Stock</span>
-                                            }
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                        <div class="activity-list">
+                            @foreach (var item in LowStockItems.Take(5))
+                            {
+                                var currentStock = item.CurrentStock ?? 0;
+                                var reorderPoint = item.ReorderPoint ?? 0;
+                                <div class="activity-item">
+                                    <div class="activity-avatar" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white;">
+                                        @if (!string.IsNullOrEmpty(item.ItemName))
+                                        {
+                                            @item.ItemName.Substring(0, 1).ToUpper()
+                                        }
+                                    </div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">@item.ItemName</div>
+                                        <div class="activity-meta">Reorder at @reorderPoint units</div>
+                                    </div>
+                                    <span class="activity-badge danger">@currentStock left</span>
+                                </div>
+                            }
+                        </div>
                     }
                     else
                     {
-                         <div class="no-data" style="color: #059669;">✅ All items are well stocked!</div>
+                         <div class="empty-state-premium">
+                            <div class="empty-state-icon">
+                                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            </div>
+                            <div class="empty-state-title">All Stocked!</div>
+                            <div class="empty-state-desc">No items are currently below reorder levels.</div>
+                        </div>
                     }
                 </div>
             </div>
 
-            @* ===== RECENT CONSUMPTION PANEL ===== *@
-            <div class="panel-card">
-                <div class="panel-header">
-                    <h3>📋 Recent Consumption</h3>
-                    <a href="/inventory/reports" class="view-all-link">View All</a>
+            @* ===== RECENT CONSUMPTION (Premium Design) ===== *@
+            <div class="premium-card">
+                <div class="premium-card-header">
+                    <h3 class="premium-card-title">
+                        <span class="card-icon">
+                            <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                        </span>
+                        Recent Consumption
+                    </h3>
+                    <a href="/inventory/reports" style="font-size:0.85rem; font-weight:600; color:#0093a0; text-decoration:none;">View All</a>
                 </div>
-                <div class="panel-body">
+                <div class="premium-card-body">
                     @if (RecentConsumptions.Any())
                     {
                         <table class="inventory-table">
                             <thead>
                                 <tr>
                                     <th>Item</th>
-                                    <th>Qty Consumed</th>
+                                    <th>Qty</th>
                                     <th>Room</th>
                                     <th>Date</th>
                                 </tr>
@@ -171,7 +177,7 @@
                                         <td style="font-weight:600;">@(consumption.InventoryItem?.ItemName ?? "N/A")</td>
                                         <td>@consumption.QuantityConsumed @(consumption.InventoryItem?.UnitOfMeasure ?? "")</td>
                                         <td>@(consumption.RoomNumber ?? "-")</td>
-                                        <td>@consumption.ConsumptionDate.ToString("MMM dd, HH:mm")</td>
+                                        <td>@consumption.ConsumptionDate.ToString("MMM dd")</td>
                                     </tr>
                                 }
                             </tbody>
@@ -179,55 +185,85 @@
                     }
                     else
                     {
-                        <div class="no-data">No recent consumption records</div>
+                        <div class="empty-state-premium">
+                            <div class="empty-state-icon">
+                                <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                            </div>
+                            <div class="empty-state-title">No Recent Activity</div>
+                            <div class="empty-state-desc">Consumption records will appear here.</div>
+                        </div>
                     }
                 </div>
             </div>
 
-            @* ===== INVENTORY BY CATEGORY ===== *@
-            <div class="panel-card">
-                <div class="panel-header">
-                    <h3>📁 Inventory by Category</h3>
+            @* ===== INVENTORY BY CATEGORY (Premium Design) ===== *@
+            <div class="premium-card">
+                <div class="premium-card-header">
+                    <h3 class="premium-card-title">
+                        <span class="card-icon">
+                            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-5 12H9v-2h6v2zm5-7H4V4h16v3z"/></svg>
+                        </span>
+                        Inventory by Category
+                    </h3>
                 </div>
-                <div class="panel-body">
+                <div class="premium-card-body">
                     @if (CategoryBreakdown.Any())
                     {
-                        <div class="category-list">
+                        <div class="activity-list">
                             @foreach (var cat in CategoryBreakdown)
                             {
-                                <div class="category-item">
-                                    <div class="category-info">
-                                        <span class="category-name">@cat.Category</span>
-                                        <span class="category-count">@cat.ItemCount items</span>
+                                <div class="activity-item">
+                                    <div class="activity-avatar" style="background: linear-gradient(135deg, #0093a0 0%, #00535b 100%); color: white;">
+                                        @if (!string.IsNullOrEmpty(cat.Category))
+                                        {
+                                            @cat.Category.Substring(0, 1).ToUpper()
+                                        }
                                     </div>
-                                    <div class="category-bar">
-                                        <div class="category-bar-fill" style="width: @(cat.ItemCount * 100 / Math.Max(CategoryBreakdown.Max(c => c.ItemCount), 1))%"></div>
+                                    <div class="activity-content" style="flex:1;">
+                                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                                            <span class="activity-title">@cat.Category</span>
+                                            <span style="font-weight:700; color:#00535b;">₱@cat.TotalValue.ToString("N0")</span>
+                                        </div>
+                                        <div style="width:100%; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden;">
+                                            <div style="width: @(cat.ItemCount * 100 / Math.Max(CategoryBreakdown.Max(c => c.ItemCount), 1))%; height:100%; background:#0093a0;"></div>
+                                        </div>
+                                        <div class="activity-meta" style="margin-top:4px;">@cat.ItemCount items</div>
                                     </div>
-                                    <span class="category-value">₱@cat.TotalValue.ToString("N0")</span>
                                 </div>
                             }
                         </div>
                     }
                     else
                     {
-                        <div class="no-data">No inventory items found</div>
+                        <div class="empty-state-premium">
+                            <div class="empty-state-icon">
+                                <svg viewBox="0 0 24 24"><path d="M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-5 12H9v-2h6v2zm5-7H4V4h16v3z"/></svg>
+                            </div>
+                            <div class="empty-state-title">No Data</div>
+                            <div class="empty-state-desc">Inventory categories will appear here.</div>
+                        </div>
                     }
                 </div>
             </div>
 
-            @* ===== SERVICES USING INVENTORY ===== *@
-            <div class="panel-card">
-                <div class="panel-header">
-                    <h3>🔗 Services Using Inventory</h3>
+            @* ===== SERVICES USING INVENTORY (Premium Design) ===== *@
+            <div class="premium-card">
+                <div class="premium-card-header">
+                    <h3 class="premium-card-title">
+                        <span class="card-icon">
+                            <svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+                        </span>
+                        Services Inventory
+                    </h3>
                 </div>
-                <div class="panel-body">
+                <div class="premium-card-body">
                     @if (ServicesWithInventory.Any())
                     {
                         <table class="inventory-table">
                             <thead>
                                 <tr>
                                     <th>Service</th>
-                                    <th>Items Linked</th>
+                                    <th>Links</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -247,7 +283,13 @@
                     }
                     else
                     {
-                        <div class="no-data">No services linked to inventory yet</div>
+                        <div class="empty-state-premium">
+                            <div class="empty-state-icon">
+                                <svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+                            </div>
+                            <div class="empty-state-title">No Services Linked</div>
+                            <div class="empty-state-desc">Services using inventory will appear here.</div>
+                        </div>
                     }
                 </div>
             </div>
@@ -452,118 +494,21 @@
 }
 
 <style>
-    /* Summary Cards */
-    /* Summary Cards (Compact 4-Column Layout) */
-    .summary-cards {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 20px;
-        margin-bottom: 32px;
-    }
-
-    .summary-card {
-        background: #e0f2f1; /* Light Cyan/Teal */
-        border-radius: 12px;
-        padding: 16px;
-        border: 1px solid #b2dfdb;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        min-height: 140px;
-        position: relative;
-        transition: transform 0.2s;
-    }
-
-    .summary-card:hover {
-        transform: translateY(-2px);
-    }
-
-    .summary-card .summary-label {
-        color: #0e7490; /* Cyan-700 */
-        font-size: 0.75rem;
-        font-weight: 800;
-        letter-spacing: 0.4px;
-        text-transform: uppercase;
-    }
-
-    .summary-card .summary-value {
-        color: #0f172a; /* Slate-900 */
-        font-size: 2.4rem;
-        font-weight: 800;
-        line-height: 1;
-        margin: 6px 0;
-    }
-
-    .summary-card .summary-desc {
-        color: #64748b; /* Slate-500 */
-        font-size: 0.8rem;
-        font-weight: 500;
-        margin-top: auto;
-    }
-
-    /* Danger/Alert Variant */
-    .summary-card.danger {
-        background: #fef3c7; /* Amber-100 */
-        border-color: #fcd34d;
-    }
-
-    .summary-card.danger .summary-label {
-        color: #92400e; /* Amber-700 */
-    }
-
-    .summary-card.danger .summary-value {
-        color: #d97706; /* Amber-600 */
-    }
-
-    .summary-card.danger .summary-desc {
-        color: #b45309; /* Amber-700 */
-    }
-
-    /* Quick Actions */
-    .quick-actions {
-        display: flex;
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-
-    .action-btn {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: #ffffff;
-        padding: 14px 22px;
-        border-radius: 12px;
-        text-decoration: none;
-        color: #0f766e;
-        font-weight: 600;
-        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
-        transition: all 0.2s ease;
-    }
-
-    .action-btn:hover {
-        background: #0f766e;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(15, 118, 110, 0.2);
-    }
-
-    .action-icon {
-        font-size: 1.2rem;
-    }
-
-    /* Dashboard Grid */
+    /* ===== INVENTORY DASHBOARD - Uses global dashboard.css for hero-stat and quick-stat ===== */
+    
+    /* Dashboard Grid - 2 columns for panels */
     .dashboard-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 20px;
+        margin-top: 28px;
     }
 
     /* Panel Cards */
     .panel-card {
         background: #ffffff;
-        border-radius: 14px;
-        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         overflow: hidden;
     }
 
@@ -572,27 +517,27 @@
         justify-content: space-between;
         align-items: center;
         padding: 16px 20px;
-        border-bottom: 1px solid #f1f5f9;
-        background: linear-gradient(90deg, #064e49, #0f766e);
+        background: linear-gradient(135deg, #0093a0 0%, #00535b 100%);
         color: white;
     }
 
     .panel-header h3 {
         margin: 0;
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 700;
+        display: flex;
+        align-items: center;
     }
 
     .view-all-link {
-        color: #d1fae5;
+        color: rgba(255,255,255,0.85);
         text-decoration: none;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         font-weight: 600;
     }
 
     .view-all-link:hover {
         color: white;
-        text-decoration: underline;
     }
 
     .panel-body {
@@ -612,135 +557,129 @@
         padding: 12px 10px;
         text-align: left;
         border-bottom: 1px solid #f1f5f9;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
     }
 
     .inventory-table th {
-        color: #6b7280;
+        color: #64748b;
         font-weight: 700;
         text-transform: uppercase;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
+    }
+
+    .inventory-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Inline SVG icons */
+    .icon-inline {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        vertical-align: middle;
+        margin-right: 6px;
     }
 
     /* Stock Badge */
     .stock-badge {
         padding: 4px 10px;
-        border-radius: 20px;
+        border-radius: 16px;
         font-weight: 600;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
     }
 
     .stock-badge.critical {
-        background: #fef2f2;
-        color: #991b1b;
-    }
-
-    .stock-badge.warning {
-        background: #fef9c3;
-        color: #92400e;
+        background: #fee2e2;
+        color: #dc2626;
     }
 
     /* Status Badge */
     .status-badge {
         padding: 4px 10px;
-        border-radius: 20px;
+        border-radius: 16px;
         font-weight: 600;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
 
     .status-badge.status-confirmed {
         background: #d1fae5;
-        color: #065f46;
+        color: #059669;
     }
 
     .status-badge.status-pending {
-        background: #fef9c3;
-        color: #92400e;
+        background: #fef3c7;
+        color: #d97706;
     }
 
     .status-badge.status-cancelled {
         background: #fee2e2;
-        color: #991b1b;
+        color: #dc2626;
     }
 
     /* Category List */
     .category-list {
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 12px;
     }
 
     .category-item {
         display: grid;
-        grid-template-columns: 1fr 2fr auto;
+        grid-template-columns: 120px 1fr 80px;
         align-items: center;
         gap: 12px;
-    }
-
-    .category-info {
-        display: flex;
-        flex-direction: column;
+        padding: 8px 0;
     }
 
     .category-name {
-        font-weight: 700;
+        font-weight: 600;
         color: #0f172a;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
     }
 
     .category-count {
-        font-size: 0.75rem;
-        color: #6b7280;
+        font-size: 0.7rem;
+        color: #64748b;
     }
 
     .category-bar {
-        height: 8px;
-        background: #e2e8f0;
-        border-radius: 4px;
+        height: 6px;
+        background: #e5e7eb;
+        border-radius: 3px;
         overflow: hidden;
     }
 
     .category-bar-fill {
         height: 100%;
-        background: linear-gradient(90deg, #0f766e, #14b8a6);
-        border-radius: 4px;
-        transition: width 0.3s ease;
+        background: #0093a0;
+        border-radius: 3px;
     }
 
     .category-value {
         font-weight: 700;
-        color: #065f46;
-        font-size: 0.9rem;
+        color: #0093a0;
+        font-size: 0.85rem;
+        text-align: right;
     }
 
-    /* No Data */
+    /* No Data & Loading */
     .no-data {
-        padding: 20px;
+        padding: 24px;
         text-align: center;
-        color: #6b7280;
+        color: #64748b;
         font-size: 0.9rem;
     }
 
-    /* Loading */
     .loading {
         padding: 40px;
         text-align: center;
-        color: #0f766e;
+        color: #0093a0;
         font-weight: 600;
     }
 
-
+    /* Responsive */
     @@media (max-width: 1200px) {
-        .summary-cards {
-            grid-template-columns: repeat(2, 1fr);
-        }
         .dashboard-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @@media (max-width: 768px) {
-        .summary-cards {
             grid-template-columns: 1fr;
         }
     }

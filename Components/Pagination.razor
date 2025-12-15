@@ -3,7 +3,7 @@
 <div class="pagination-container" style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
     <div class="pagination-controls" style="display: flex; align-items: center; gap: 8px;">
         <button class="pagination-btn" @onclick="GoToFirstPage" disabled="@(CurrentPage == 1)" 
-                style="padding: 8px 12px; border: 1px solid #0f766e; background: white; color: #0f766e; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                style="padding: 8px 12px; border: 1px solid #0093a0; background: white; color: #0093a0; border-radius: 6px; cursor: pointer; font-weight: 600;">
             &lt;
         </button>
         
@@ -17,14 +17,14 @@
             {
                 <button class="pagination-btn @(pg == CurrentPage ? "active" : "")" 
                         @onclick="() => GoToPage(pg)"
-                        style="padding: 8px 12px; border: 1px solid #0f766e; background: @(pg == CurrentPage ? "#0f766e" : "white"); color: @(pg == CurrentPage ? "white" : "#0f766e"); border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        style="padding: 8px 12px; border: 1px solid #0093a0; background: @(pg == CurrentPage ? "#0093a0" : "white"); color: @(pg == CurrentPage ? "white" : "#0093a0"); border-radius: 6px; cursor: pointer; font-weight: 600;">
                     @pg
                 </button>
             }
         }
         
         <button class="pagination-btn" @onclick="GoToLastPage" disabled="@(CurrentPage == TotalPages)"
-                style="padding: 8px 12px; border: 1px solid #0f766e; background: white; color: #0f766e; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                style="padding: 8px 12px; border: 1px solid #0093a0; background: white; color: #0093a0; border-radius: 6px; cursor: pointer; font-weight: 600;">
             &gt;
         </button>
     </div>
@@ -36,7 +36,7 @@
         <div class="pagination-items-per-page" style="display: flex; align-items: center; gap: 8px; color: #475569; font-size: 0.9rem;">
             <label>Items per page:</label>
             <select value="@ItemsPerPage" @onchange="HandleItemsPerPageChanged"
-                    style="padding: 6px 12px; border: 1px solid #0f766e; border-radius: 6px; color: #0f766e; font-weight: 600; cursor: pointer;">
+                    style="padding: 6px 12px; border: 1px solid #0093a0; border-radius: 6px; color: #0093a0; font-weight: 600; cursor: pointer;">
                 <option value="10">10</option>
                 <option value="25">25</option>
                 <option value="50">50</option>

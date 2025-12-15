@@ -18,7 +18,7 @@
     @if (!string.IsNullOrEmpty(ErrorMessage))
     {
         <div class="error-banner">
-            <span class="error-icon">⚠️</span>
+            <span class="error-icon"><svg class="icon-inline" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span>
             <span class="error-message">@ErrorMessage</span>
             <button class="error-close" @onclick="ClearError">×</button>
         </div>
@@ -146,7 +146,7 @@
             else if (IsLoaded)
             {
                 <div class="no-users-message">
-                    <div class="no-users-icon">👤</div>
+                    <div class="no-users-icon"><svg viewBox="0 0 24 24" fill="currentColor" width="48" height="48"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
                     <h3>No users found</h3>
                     <p>
                         @if (!string.IsNullOrEmpty(SearchText))
@@ -254,7 +254,7 @@
     <div class="modal-overlay">
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header-teal">
-                <h2 style="margin:0; font-size:1.4rem;">📦 Archived Users</h2>
+                <h2 style="margin:0; font-size:1.4rem;"><svg class="icon-inline" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-5 12H9v-2h6v2zm5-7H4V4h16v3z"/></svg> Archived Users</h2>
                 <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8); margin-top: 4px;">@ArchivedUsers.Count archived users</div>
             </div>
 
@@ -282,7 +282,7 @@
                                     <td style="text-align:center;">
                                         <button class="btn-secondary" style="background:#10b981; color: white;" 
                                                 @onclick="() => RestoreUser(user)" disabled="@IsProcessing">
-                                            ✅ Restore
+                                            <svg class="icon-inline" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Restore
                                         </button>
                                     </td>
                                 </tr>
@@ -309,7 +309,7 @@
     <div class="modal-overlay">
         <div class="modal-content" style="max-width:420px;">
             <div class="modal-header-teal">
-                <h2 style="margin:0; font-size:1.2rem;">⚠️ Confirm Archive</h2>
+                <h2 style="margin:0; font-size:1.2rem;"><svg class="icon-inline" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Confirm Archive</h2>
             </div>
             <div style="padding:20px;">
                 <p>Are you sure you want to archive user <strong>@(ArchiveTarget?.Username)</strong>?</p>
