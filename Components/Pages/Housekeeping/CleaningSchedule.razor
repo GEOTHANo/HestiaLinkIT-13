@@ -36,27 +36,39 @@
         }
         else
         {
-            <!-- Summary Cards -->
-            <div class="summary-cards">
-                <div class="summary-card">
-                    <div class="summary-label">NEEDS CLEANING</div>
-                    <div class="summary-value">@RoomsForCleaning.Count</div>
-                    <div class="summary-desc">Rooms requiring cleaning</div>
+            <!-- Summary Cards - Matching Dashboard Hero Stats -->
+            <div class="dashboard-hero" style="margin-bottom:32px;">
+                <div class="hero-stat">
+                    <div class="hero-stat-icon">
+                        <svg viewBox="0 0 24 24"><path d="M19.36 2.72L20.78 4.14L15.06 9.85C16.13 11.39 16.28 13.24 15.38 14.44L9.06 8.12C10.26 7.22 12.11 7.37 13.65 8.44L19.36 2.72M5.93 17.57C3.92 15.56 2.69 13.16 2.35 10.92L7.23 8.83L14.67 16.27L12.58 21.15C10.34 20.81 7.94 19.58 5.93 17.57Z"/></svg>
+                   </div>
+                    <div class="hero-stat-value">@RoomsForCleaning.Count</div>
+                    <div class="hero-stat-label">Needs Cleaning</div>
+                    <div class="hero-stat-change">Rooms requiring cleaning</div>
                 </div>
-                <div class="summary-card">
-                    <div class="summary-label">ACTIVE TASKS</div>
-                    <div class="summary-value">@ActiveTasks.Count</div>
-                    <div class="summary-desc">Currently in progress</div>
+                <div class="hero-stat">
+                    <div class="hero-stat-icon">
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                    </div>
+                    <div class="hero-stat-value">@ActiveTasks.Count</div>
+                    <div class="hero-stat-label">Active Tasks</div>
+                    <div class="hero-stat-change">Currently in progress</div>
                 </div>
-                <div class="summary-card">
-                    <div class="summary-label">AVAILABLE STAFF</div>
-                    <div class="summary-value">@AvailableHousekeepers.Count</div>
-                    <div class="summary-desc">Housekeepers available</div>
+                <div class="hero-stat">
+                    <div class="hero-stat-icon">
+                        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                    </div>
+                    <div class="hero-stat-value">@AvailableHousekeepers.Count</div>
+                    <div class="hero-stat-label">Available Staff</div>
+                    <div class="hero-stat-change">Housekeepers available</div>
                 </div>
-                <div class="summary-card">
-                    <div class="summary-label">MAINTENANCE</div>
-                    <div class="summary-value">@RoomsUnderMaintenance.Count</div>
-                    <div class="summary-desc">Rooms under maintenance</div>
+                <div class="hero-stat">
+                    <div class="hero-stat-icon">
+                        <svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
+                    </div>
+                    <div class="hero-stat-value">@RoomsUnderMaintenance.Count</div>
+                    <div class="hero-stat-label">Maintenance</div>
+                    <div class="hero-stat-change">Rooms under maintenance</div>
                 </div>
             </div>
 
@@ -270,56 +282,6 @@
 }
 
 <style>
-    /* Summary Cards - Matching Suppliers Style */
-    .summary-cards {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 24px;
-        margin-bottom: 32px;
-    }
-
-    .summary-card {
-        background: #e0f2f1; /* Light Cyan/Teal */
-        border-radius: 12px;
-        padding: 16px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        min-height: 120px;
-        position: relative;
-        transition: transform 0.15s ease;
-    }
-
-    .summary-card:hover {
-        transform: translateY(-2px);
-    }
-
-    .summary-card .summary-label {
-        color: #0e7490; /* Cyan-700 */
-        font-size: 0.8rem;
-        font-weight: 800;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-    }
-
-    .summary-card .summary-value {
-        color: #0f172a; /* Slate-900 */
-        font-size: 3.5rem;
-        font-weight: 800;
-        line-height: 1;
-        text-align: right;
-        margin: 0;
-    }
-
-    .summary-card .summary-desc {
-        color: #64748b; /* Slate-500 */
-        font-size: 0.85rem;
-        font-weight: 500;
-        margin-top: auto;
-    }
-
     /* Cleaning Cards */
     .room-grid {
         display: grid;
